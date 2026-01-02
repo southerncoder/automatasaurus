@@ -8,6 +8,31 @@ Automatasaurus enables extended, autonomous software development sessions by coo
 
 **This repository contains the workflow orchestration framework.** It is designed to be installed into target projects as a CLI tool.
 
+## Workflow
+
+### Two-Phase Operation
+
+**Phase 1: Planning (Interactive)**
+- Product Owner gathers requirements from user
+- Architect makes technology decisions
+- Product Owner creates GitHub issues with dependencies
+- User approves before autonomous work begins
+
+**Phase 2: Autonomous Loop (PM Coordinated)**
+- PM selects next issue based on dependencies and priority
+- Routes to specialists (UI/UX if needed)
+- Developer implements and opens PR
+- Review cycle: Architect (required), SecOps/UI-UX (optional)
+- Tester does final verification and merges
+- Loop continues until all issues complete
+
+### Escalation Flow
+
+When stuck:
+1. Developer tries up to 5 times
+2. Escalates to Architect for analysis
+3. If Architect also stuck → Notify human and wait
+
 ## Project Commands
 
 **IMPORTANT**: Always check `.claude/commands.md` for project-specific commands before running any development, test, or build commands. Each target project will have its own commands configured.
@@ -24,15 +49,52 @@ Common command categories:
 
 The following agents are available in `.claude/agents/`:
 
-| Agent | Role | Model | Special Tools |
+| Agent | Role | Model | Review Status |
 |-------|------|-------|---------------|
-| `product-owner` | Requirements, user stories, acceptance criteria | Opus | GitHub CLI |
-| `product-manager` | Roadmap, milestones, release coordination | Sonnet | GitHub CLI |
-| `architect` | System design, ADRs, technical decisions | Opus | - |
-| `developer` | Feature implementation, bug fixes, PRs | Sonnet | Full edit access |
-| `tester` | Test planning, automated tests, QA, E2E testing | Sonnet | Playwright MCP |
-| `secops` | Security reviews, vulnerability assessment | Opus | - |
-| `ui-ux` | User experience, accessibility, design specs | Sonnet | - |
+| `product-owner` | Requirements, issues, follow-ups | Opus | N/A |
+| `product-manager` | Workflow coordinator, drives the loop | Sonnet | N/A |
+| `architect` | Design, ADRs, stuck-issue analysis | Opus | **Required** |
+| `developer` | Implementation, PRs, addressing feedback | Sonnet | N/A |
+| `tester` | QA, Playwright, final merge authority | Sonnet | N/A |
+| `secops` | Security reviews | Opus | Optional (can decline) |
+| `ui-ux` | Design specs, accessibility | Sonnet | Optional (can decline) |
+
+## Agent Comment Format
+
+**All agents MUST prefix their comments with their identity:**
+
+```markdown
+**[PM]** Starting work on issue #5. Routing to Developer.
+**[Developer]** Fixed in commit abc1234. Ready for re-review.
+**[Architect]** LGTM. Clean separation of concerns.
+**[SecOps]** N/A - No security impact in this change.
+**[UI/UX]** N/A - No UI changes in this PR.
+**[Tester]** Verified and approved. Merging.
+**[Product Owner]** Created follow-up issue #12 for discovered scope.
+```
+
+## State Labels
+
+| Label | Description |
+|-------|-------------|
+| `ready` | No blocking dependencies, can be worked |
+| `in-progress` | Currently being implemented |
+| `blocked` | Waiting on dependencies or input |
+| `needs-review` | PR open, awaiting reviews |
+| `needs-testing` | Reviews complete, awaiting tester |
+| `priority:high/medium/low` | Work order priority |
+
+## Dependency Tracking
+
+Issues document dependencies in their body:
+
+```markdown
+## Dependencies
+Depends on #12 (User authentication)
+Depends on #15 (Database schema)
+```
+
+PM parses these to determine issue order.
 
 ## MCP Integrations
 
@@ -45,28 +107,22 @@ The tester agent has access to Playwright MCP for browser-based testing:
 
 Usage: `Use playwright mcp to open a browser to [URL]`
 
-## Workflow Coordination
-
-Work is coordinated through GitHub:
-- **Issues**: Track features, bugs, and tasks
-- **Pull Requests**: Code changes with reviews
-- **Milestones**: Group related work for releases
-- **Labels**: Categorize and prioritize work
-
 ## Stop Hook Behavior
 
 The system uses intelligent stop hooks to ensure:
 1. Tasks are fully completed before stopping
-2. All relevant personas have been consulted
-3. Work is properly documented in GitHub
-4. No errors or failing tests remain
+2. Open issues checked for more work
+3. PRs reviewed and merged
+4. Proper agent handoffs
+5. Notifications sent when stuck or complete
 
 ## Development Conventions
 
 ### Git Workflow
-- Branch naming: `feature/issue-123-description`, `fix/issue-456-bug-name`
-- Commit messages: `feat: description (#123)`, `fix: description (#456)`
-- PRs require review and passing tests before merge
+- Branch naming: `feature/issue-{num}-{slug}`, `fix/issue-{num}-{slug}`
+- PR body must include: `Closes #{issue-number}`
+- PRs require Architect approval before merge
+- Tester performs final verification and merge
 
 ### Code Style
 - Follow existing patterns in the codebase
@@ -103,7 +159,8 @@ gh auth status
 Available skills in `.claude/skills/`:
 
 ### Workflow Skills
-- `github-workflow` - Issue and PR templates, milestone management
+- `workflow-orchestration` - Full workflow loop documentation
+- `github-workflow` - Issue/PR/review templates, state labels
 - `agent-coordination` - Multi-agent workflow patterns
 - `project-commands` - Finding and using project-specific commands
 - `notifications` - User notification system for questions, approvals, and alerts
@@ -134,3 +191,13 @@ Agents can alert the user when attention is needed:
 ```
 
 Notifications are also sent automatically on stop based on context.
+
+## Environment Variables
+
+| Variable | Purpose |
+|----------|---------|
+| `WORKFLOW_MODE` | Set to "automated" for autonomous operation |
+| `GITHUB_WORKFLOW` | Set to "enabled" for GitHub integration |
+| `AUTOMATASAURUS_SOUND` | Set to "false" to disable notification sounds |
+| `AUTOMATASAURUS_LOG` | Custom log file location |
+| `MAX_RETRY_ATTEMPTS` | Number of attempts before escalation (default: 5) |

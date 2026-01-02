@@ -8,25 +8,101 @@ Automatasaurus creates a team of AI personas that work together through GitHub i
 
 **This repository contains the workflow orchestration framework.** Install it into your project to enable AI-assisted software development with coordinated agents.
 
+## Workflow
+
+The workflow operates in two phases:
+
+### Phase 1: Planning (Interactive)
+
+```
+User describes feature/project
+    ↓
+Product Owner: Gathers requirements, creates user stories
+    ↓
+Architect: Makes technology decisions, documents in ADRs
+    ↓
+Product Owner: Creates GitHub issues with:
+  - User story and acceptance criteria
+  - Dependencies ("Depends on #X")
+  - Priority labels
+    ↓
+User approves issue breakdown
+    ↓
+User: "Start working on the issues"
+```
+
+### Phase 2: Autonomous Loop (PM Coordinated)
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│ PM COORDINATION LOOP                                                │
+│                                                                     │
+│ 1. PM: Select next issue                                           │
+│    - Check dependencies (all deps closed?)                         │
+│    - Consider priority labels                                       │
+│    - Consult PO if unclear                                         │
+│                                                                     │
+│ 2. PM: Route to specialists                                         │
+│    └→ UI/UX: Add specs if UI work needed                           │
+│                                                                     │
+│ 3. Developer: Implement                                             │
+│    - Create branch: feature/issue-{num}-{slug}                     │
+│    - Write code and tests                                          │
+│    - If stuck (5 attempts) → Escalate to Architect                 │
+│    - If Architect stuck → Notify human, wait                       │
+│    - Open PR with "Closes #X"                                      │
+│                                                                     │
+│ 4. Review Cycle                                                     │
+│    ├→ Architect: REQUIRED review                                   │
+│    ├→ SecOps: Review if security-relevant (can decline "N/A")     │
+│    ├→ UI/UX: Review if UI-relevant (can decline "N/A")            │
+│    └→ Developer: Address feedback, push fixes                      │
+│                                                                     │
+│ 5. Tester: Final Verification                                       │
+│    - Run automated tests                                            │
+│    - Manual verification if needed (Playwright)                    │
+│    - If issues → Back to Developer                                 │
+│    - If passes → Merge PR                                          │
+│                                                                     │
+│ 6. PM: Continue to next issue                                       │
+│    └→ Loop until all issues complete                               │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
 ## Personas
 
-| Persona | Expertise | Responsibilities |
-|---------|-----------|------------------|
-| **Product Owner** | Requirements | User stories, acceptance criteria, backlog prioritization |
-| **Product Manager** | Coordination | Roadmaps, milestones, release planning, stakeholder communication |
-| **Architect** | Design | System design, ADRs, technology decisions, patterns |
-| **Developer** | Implementation | Feature development, bug fixes, PRs, code quality |
-| **Tester** | Quality | Test planning, automated tests, E2E testing with Playwright |
-| **SecOps** | Security | Security reviews, vulnerability assessment, compliance |
-| **UI/UX Designer** | Experience | User flows, component specs, accessibility |
+| Persona | Role | Responsibilities |
+|---------|------|------------------|
+| **Product Owner** | Requirements | User stories, acceptance criteria, issue creation, follow-ups |
+| **Product Manager** | Coordination | Drives the loop, selects issues, routes to specialists |
+| **Architect** | Design | System design, ADRs, required PR reviews, stuck-issue analysis |
+| **Developer** | Implementation | Feature development, bug fixes, PRs, addresses feedback |
+| **Tester** | Quality | Test execution, Playwright verification, final merge |
+| **SecOps** | Security | Security reviews (optional, can decline for non-security PRs) |
+| **UI/UX Designer** | Experience | Design specs, accessibility (optional, can decline for backend PRs) |
+
+## Agent Comment Format
+
+All agents prefix their comments with their identity:
+
+```markdown
+**[PM]** Starting work on issue #5. Routing to Developer.
+**[Developer]** Fixed in commit abc1234. Ready for re-review.
+**[Architect]** LGTM. Clean separation of concerns.
+**[SecOps]** N/A - No security impact in this change.
+**[UI/UX]** N/A - No UI changes in this PR.
+**[Tester]** Verified and approved. Merging.
+**[Product Owner]** Created follow-up issue #12 for discovered scope.
+```
 
 ## Features
 
 - **Stop Hooks**: Intelligent evaluation ensures tasks are complete before stopping
-- **Subagent Coordination**: Specialized agents for each role with appropriate tools and models
-- **GitHub Integration**: All work coordinated through issues, PRs, and milestones
+- **Subagent Coordination**: Specialized agents with role-specific completion criteria
+- **GitHub Integration**: All work coordinated through issues, PRs, and labels
 - **Playwright MCP**: Browser automation for E2E testing and visual verification
-- **Notifications**: Desktop alerts when agents need attention, approval, or finish work
+- **Notifications**: Desktop alerts when agents need attention or finish work
+- **Escalation Flow**: Developer → Architect → Human (when stuck)
 - **Language Skills**: On-demand coding standards for Python, JavaScript, CSS
 - **Project Commands**: Configurable commands for any project stack
 - **Extended Sessions**: Designed for autonomous work over extended periods
@@ -49,8 +125,6 @@ gh auth login
 gh auth status
 ```
 
-The agents use GitHub CLI to create issues, pull requests, manage milestones, and coordinate work.
-
 ## Project Structure
 
 ```
@@ -67,15 +141,16 @@ automatasaurus/
     │   ├── on-stop.sh                     # Auto-notify on stop
     │   └── request-attention.sh           # Explicit attention requests
     ├── agents/                            # Persona subagents
-    │   ├── product-owner/
-    │   ├── product-manager/
-    │   ├── architect/
-    │   ├── developer/
-    │   ├── tester/                        # Includes Playwright MCP access
-    │   ├── secops/
-    │   └── ui-ux/
+    │   ├── product-owner/                 # Requirements & issue creation
+    │   ├── product-manager/               # Workflow coordinator
+    │   ├── architect/                     # Design & required PR reviews
+    │   ├── developer/                     # Implementation & PRs
+    │   ├── tester/                        # QA, Playwright, merge authority
+    │   ├── secops/                        # Security reviews (optional)
+    │   └── ui-ux/                         # Design specs (optional)
     └── skills/                            # Reusable skills
-        ├── github-workflow/               # Issue/PR management
+        ├── workflow-orchestration/        # Full workflow documentation
+        ├── github-workflow/               # Issue/PR/review templates
         ├── agent-coordination/            # Multi-agent patterns
         ├── project-commands/              # Command discovery
         ├── notifications/                 # Alert system docs
@@ -109,11 +184,94 @@ automatasaurus init
 claude
 ```
 
+## Usage
+
+### Planning Session
+
+Start with a high-level request:
+
+```
+Let's plan a user authentication system with login, logout, and password reset
+```
+
+The Product Owner and Architect will work with you to:
+- Gather requirements
+- Make architectural decisions
+- Create GitHub issues with dependencies
+- Get your approval before starting work
+
+### Starting the Autonomous Loop
+
+Once issues are created:
+
+```
+Start working on the issues
+```
+
+The PM will coordinate the loop until all issues are complete or human input is needed.
+
+### Invoking Specific Agents
+
+```
+Use the architect agent to review the database schema
+Use the secops agent to audit our dependencies
+Use the tester agent to create a test plan for the API
+Use the tester agent with playwright to verify the checkout flow
+```
+
+## Dependency Tracking
+
+Issues track dependencies in their body:
+
+```markdown
+## Dependencies
+Depends on #12 (User authentication)
+Depends on #15 (Database schema)
+```
+
+The PM uses this to determine issue order - an issue is only "ready" when all dependencies are closed.
+
+## State Labels
+
+| Label | Description |
+|-------|-------------|
+| `ready` | No blocking dependencies, can be worked |
+| `in-progress` | Currently being implemented |
+| `blocked` | Waiting on dependencies or input |
+| `needs-review` | PR open, awaiting reviews |
+| `needs-testing` | Reviews complete, awaiting tester |
+| `priority:high/medium/low` | Work order priority |
+
+## Escalation Flow
+
+When the Developer gets stuck after 5 attempts:
+
+```
+Developer stuck
+    ↓
+Escalate to Architect
+    ↓
+Architect analyzes and provides guidance
+    ↓
+If Architect also stuck → Notify human and wait
+```
+
+## Notifications
+
+Agents send desktop notifications when they need your attention:
+
+| Type | Trigger | Sound |
+|------|---------|-------|
+| **Question** | Agent has a blocking question | Submarine |
+| **Approval** | PR or decision needs approval | Submarine |
+| **Stuck** | Agent encountered an issue | Basso |
+| **Complete** | All work finished | Hero |
+
 ## Configuration
 
 ### Project Commands
 
-After installation, edit `.claude/commands.md` to configure your project's commands:
+Edit `.claude/commands.md` for your project's commands:
 
 ```markdown
 ## Quick Reference
@@ -125,8 +283,6 @@ After installation, edit `.claude/commands.md` to configure your project's comma
 | Run all tests | `npm test` |
 | Run E2E tests | `npx playwright test` |
 ```
-
-A template is provided in `.claude/commands.template.md` with placeholders for common stacks.
 
 ### MCP Servers
 
@@ -155,101 +311,6 @@ export AUTOMATASAURUS_SOUND=false
 export AUTOMATASAURUS_LOG=/path/to/log
 ```
 
-## Usage
-
-### Starting a Session
-
-```bash
-claude
-```
-
-### High-Level Requests
-
-Begin with a high-level request:
-
-```
-Create a user authentication system with login, logout, and password reset
-```
-
-The system will automatically:
-- Break down requirements (Product Owner)
-- Design the architecture (Architect)
-- Review security implications (SecOps)
-- Implement the solution (Developer)
-- Write and run tests (Tester with Playwright)
-- Create GitHub issues and PRs along the way
-- Notify you when questions arise or work completes
-
-### Invoking Specific Agents
-
-```
-Use the architect agent to review the database schema
-Use the secops agent to audit our dependencies
-Use the tester agent to create a test plan for the API
-Use the tester agent with playwright to verify the checkout flow
-```
-
-### Browser Testing with Playwright
-
-The tester agent can perform visual verification:
-
-```
-Use playwright mcp to open a browser to http://localhost:3000
-Use playwright mcp to click the login button
-Use playwright mcp to fill the email field with test@example.com
-Use playwright mcp to take a screenshot
-```
-
-## Notifications
-
-Agents send desktop notifications when they need your attention:
-
-| Type | Trigger | Sound |
-|------|---------|-------|
-| **Question** | Agent has a blocking question | Submarine |
-| **Approval** | PR or decision needs approval | Submarine |
-| **Stuck** | Agent encountered an issue | Basso |
-| **Complete** | All work finished | Hero |
-
-Agents can also explicitly request attention:
-```bash
-.claude/hooks/request-attention.sh question "Which database should we use?"
-.claude/hooks/request-attention.sh complete "Feature implementation done"
-```
-
-## How It Works
-
-### Stop Hooks
-
-The system uses prompt-based stop hooks that evaluate:
-- Has the task been fully completed?
-- Are there errors or failing tests?
-- Has work been documented in GitHub?
-- Have relevant personas been consulted?
-
-If any checks fail, Claude continues working rather than stopping prematurely.
-
-### Subagent Stop Hooks
-
-Each persona has their own stop evaluation to ensure they've fulfilled their role before handing off to the next persona in the workflow.
-
-### Workflow Patterns
-
-**New Feature:**
-```
-Product Owner → Architect → UI/UX → SecOps → Developer → Tester → Product Owner (accept)
-```
-
-**Bug Fix:**
-```
-Tester → Developer → (Architect if complex) → Tester (verify)
-```
-
-**Security Issue:**
-```
-SecOps → Architect → Developer → SecOps (verify)
-```
-
 ## Language Skills
 
 The developer agent loads language-specific skills on demand:
@@ -259,8 +320,6 @@ The developer agent loads language-specific skills on demand:
 | Python | `python-standards` | PEP 8, type hints, pytest, async patterns |
 | JavaScript/TypeScript | `javascript-standards` | ESM, React, testing, error handling |
 | CSS/SCSS | `css-standards` | BEM, CSS variables, flexbox/grid, accessibility |
-
-Skills are loaded automatically based on the files being worked on.
 
 ## Customization
 
@@ -276,7 +335,10 @@ Skills are loaded automatically based on the files being worked on.
    model: sonnet
    ---
    ```
-3. Write a detailed system prompt
+3. Write a detailed system prompt including:
+   - Responsibilities
+   - When to use this agent
+   - Comment format: `**[Agent Name]** comment text`
 4. Update `CLAUDE.md` with the new persona
 
 ### Creating Skills
@@ -291,31 +353,6 @@ Skills are loaded automatically based on the files being worked on.
    ```
 3. Document the workflow or knowledge
 4. Skills are loaded on-demand when relevant
-
-### Configuring Commands for Your Stack
-
-Edit `.claude/commands.md` or use the template:
-
-**Node.js:**
-```
-{{install}}: npm install
-{{dev}}: npm run dev
-{{test}}: npm test
-```
-
-**Python:**
-```
-{{install}}: pip install -r requirements.txt
-{{dev}}: python manage.py runserver
-{{test}}: pytest
-```
-
-**Go:**
-```
-{{install}}: go mod download
-{{dev}}: go run .
-{{test}}: go test ./...
-```
 
 ## Roadmap
 

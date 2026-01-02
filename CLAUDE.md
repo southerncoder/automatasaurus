@@ -119,7 +119,9 @@ The system uses intelligent stop hooks to ensure:
 ## Development Conventions
 
 ### Git Workflow
-- Branch naming: `feature/issue-{num}-{slug}`, `fix/issue-{num}-{slug}`
+- Branch naming: `{issue-num}-{slug}` (e.g., `42-user-authentication`)
+- Commit frequently at logical checkpoints
+- Commit format: `type: description (#issue)`
 - PR body must include: `Closes #{issue-number}`
 - PRs require Architect approval before merge
 - Tester performs final verification and merge
@@ -135,9 +137,26 @@ The system uses intelligent stop hooks to ensure:
 - Create ADRs for significant architectural decisions
 - Document APIs and complex logic
 
+## Slash Commands
+
+Primary way to invoke workflows:
+
+| Command | Description |
+|---------|-------------|
+| `/plan [feature]` | Start requirements gathering and planning |
+| `/work-all` | Work through all open issues autonomously |
+| `/work [issue#]` | Work on a specific issue |
+
+Examples:
+```
+/plan user authentication system
+/work-all
+/work 42
+```
+
 ## Agent Invocation
 
-Agents can be invoked explicitly:
+Agents can also be invoked explicitly:
 ```
 Use the architect agent to design the authentication system
 Use the secops agent to review this PR for security issues
@@ -160,7 +179,9 @@ Available skills in `.claude/skills/`:
 
 ### Workflow Skills
 - `workflow-orchestration` - Full workflow loop documentation
-- `github-workflow` - Issue/PR/review templates, state labels
+- `github-workflow` - Issue/PR management, state labels
+- `pr-writing` - Best practices for writing clear PR descriptions
+- `code-review` - Best practices for performing thorough code reviews
 - `agent-coordination` - Multi-agent workflow patterns
 - `project-commands` - Finding and using project-specific commands
 - `notifications` - User notification system for questions, approvals, and alerts

@@ -29,20 +29,40 @@ When user says "Start working on the issues" or similar:
 
 ```
 LOOP:
-  1. Check for open issues
-     gh issue list --state open --json number,title,labels,body
+  1. List ALL remaining open issues with titles
+     gh issue list --state open --json number,title,labels
+
+     Display them:
+     "Remaining issues TODO:
+      - #1: Database schema for users
+      - #2: User registration endpoint
+      - #3: User login endpoint
+      ..."
 
   2. If no open issues:
      → Notify: "All issues complete!"
      → Exit loop
 
-  3. Parse dependencies, find "ready" issues
-     - Issue is ready if all "Depends on #X" issues are closed
-     - Issue is ready if it doesn't have "blocked" label
+  3. Analyze each issue for readiness:
+     - Check explicit dependencies ("Depends on #X" - all closed?)
+     - Check for "blocked" label
+     - Mark unblocked issues as candidates
 
-  4. Select next issue (consult PO if unclear on priority)
-     - Highest priority ready issue
-     - Update label: remove "ready", add "in-progress"
+  4. Select next issue using JUDGMENT:
+     - Consider explicit dependencies first (hard blockers)
+     - Consider logical order (what makes sense to build first?)
+     - Consider technical dependencies (even if not explicit)
+     - Consider priority labels (high > medium > low)
+     - Consider complexity (sometimes quick wins help momentum)
+     - If unclear → Consult PO for business priority guidance
+
+     Document your reasoning:
+     "Selecting #2 (User registration) next because:
+      - #1 (Database schema) is complete
+      - Registration logically comes before login
+      - Marked as priority:high"
+
+     Update label: remove "ready", add "in-progress"
 
   5. Check if issue needs UI/UX work
      - If yes → Delegate to UI/UX Designer
@@ -71,6 +91,49 @@ LOOP:
      - Continue to next iteration
 
 END LOOP
+```
+
+## Issue Selection Judgment
+
+When selecting the next issue, use this decision framework:
+
+### 1. Hard Blockers (Must Check First)
+- Explicit "Depends on #X" - all must be CLOSED
+- "blocked" label present
+- If blocked, skip to next candidate
+
+### 2. Logical Order (Use Judgment)
+Even without explicit dependencies, consider:
+- **Foundation first**: Database schemas before APIs, APIs before UI
+- **Authentication early**: Login/auth usually unblocks many features
+- **Core before edge cases**: Main flow before error handling
+- **Shared components first**: Utilities before features using them
+
+### 3. Priority Labels
+- `priority:high` - Work on these first when possible
+- `priority:medium` - Default priority
+- `priority:low` - Can be deferred
+
+### 4. Strategic Considerations
+- **Unblock others**: Prefer issues that unblock multiple waiting issues
+- **Quick wins**: Small issues can build momentum
+- **Risk mitigation**: Tackle uncertain/risky items early
+- **Related work**: Group related issues to maintain context
+
+### Example Selection Process
+```
+Remaining: #3 (Login), #4 (Password Reset), #5 (Session Mgmt)
+
+Analysis:
+- #3 has no blockers, is priority:high
+- #4 depends on #3 (blocked)
+- #5 depends on #3 (blocked)
+
+Decision: Select #3 because:
+1. No explicit blockers
+2. Priority:high label
+3. Completing it unblocks both #4 and #5
+4. Login is foundational - registration (#2) just completed
 ```
 
 ## Dependency Parsing
@@ -146,25 +209,34 @@ The PR has been approved by: {reviewers}
 
 ## Progress Reporting
 
-Periodically summarize progress:
+At the start of each loop iteration and periodically, list all issues:
+
+```bash
+# Get all issues (open and closed)
+gh issue list --state all --json number,title,state,labels --jq '.[] | "#\(.number): \(.title) [\(.state)]"'
+```
+
+Summarize progress:
 
 ```markdown
 ## Workflow Status
 
-### Completed
-- #1: Feature A ✓
-- #2: Feature B ✓
+### Remaining Issues TODO:
+- #3: User login endpoint (ready - no blockers)
+- #4: Password reset flow (blocked - depends on #2, #3)
+- #5: Session management (blocked - depends on #3)
 
-### In Progress
-- #3: Feature C (Developer implementing)
+### In Progress:
+- #2: User registration endpoint (Developer implementing)
 
-### Ready
-- #4: Feature D (waiting to start)
+### Completed:
+- #1: Database schema for users ✓
 
-### Blocked
-- #5: Feature E (blocked on #3)
+### Progress: 1/5 issues complete
 
-### Issues: {completed}/{total}
+### Next Up:
+After #2 completes, #3 (User login) is the logical next step -
+it's a dependency for both #4 and #5.
 ```
 
 ## Handling Edge Cases

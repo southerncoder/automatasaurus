@@ -46,8 +46,8 @@ User: "Start working on the issues"
 │    └→ UI/UX: Add specs if UI work needed                           │
 │                                                                     │
 │ 3. Developer: Implement                                             │
-│    - Create branch: feature/issue-{num}-{slug}                     │
-│    - Write code and tests                                          │
+│    - Create branch: {issue-num}-{slug}                             │
+│    - Commit frequently at logical checkpoints                      │
 │    - If stuck (5 attempts) → Escalate to Architect                 │
 │    - If Architect stuck → Notify human, wait                       │
 │    - Open PR with "Closes #X"                                      │
@@ -134,6 +134,10 @@ automatasaurus/
 ├── .mcp.json                              # MCP server configuration (Playwright)
 └── .claude/
     ├── settings.json                      # Claude Code settings with hooks
+    ├── commands/                          # Slash commands
+    │   ├── plan.md                        # /plan - Requirements mode
+    │   ├── work-all.md                    # /work-all - Process all issues
+    │   └── work.md                        # /work - Process single issue
     ├── commands.md                        # Project-specific commands
     ├── commands.template.md               # Template for new projects
     ├── hooks/                             # Notification and stop hooks
@@ -150,7 +154,9 @@ automatasaurus/
     │   └── ui-ux/                         # Design specs (optional)
     └── skills/                            # Reusable skills
         ├── workflow-orchestration/        # Full workflow documentation
-        ├── github-workflow/               # Issue/PR/review templates
+        ├── github-workflow/               # Issue/PR/label management
+        ├── pr-writing/                    # PR description best practices
+        ├── code-review/                   # Code review best practices
         ├── agent-coordination/            # Multi-agent patterns
         ├── project-commands/              # Command discovery
         ├── notifications/                 # Alert system docs
@@ -186,31 +192,54 @@ claude
 
 ## Usage
 
-### Planning Session
+### Slash Commands
 
-Start with a high-level request:
+The primary way to invoke workflows:
+
+| Command | Description |
+|---------|-------------|
+| `/plan [feature]` | Start requirements gathering and planning |
+| `/work-all` | Work through all open issues autonomously |
+| `/work [issue#]` | Work on a specific issue |
+
+### `/plan` - Requirements Mode
 
 ```
-Let's plan a user authentication system with login, logout, and password reset
+/plan user authentication system
 ```
 
-The Product Owner and Architect will work with you to:
-- Gather requirements
-- Make architectural decisions
+The Product Owner will:
+- Ask clarifying questions (lots of them!)
+- Work with Architect on technical approach
 - Create GitHub issues with dependencies
-- Get your approval before starting work
+- Get your approval before any implementation
 
-### Starting the Autonomous Loop
-
-Once issues are created:
+### `/work-all` - Autonomous Loop
 
 ```
-Start working on the issues
+/work-all
 ```
 
-The PM will coordinate the loop until all issues are complete or human input is needed.
+The PM will:
+- List all remaining issues
+- Select next issue based on dependencies and priority
+- Coordinate the full workflow (Developer → Reviews → Tester → Merge)
+- Continue until all issues complete or blocked on human input
+
+### `/work` - Single Issue
+
+```
+/work 42
+```
+
+Works on just issue #42:
+- Checks dependencies are satisfied
+- Routes through the full workflow
+- Stops after that issue is merged
 
 ### Invoking Specific Agents
+
+You can also invoke agents directly:
 
 ```
 Use the architect agent to review the database schema

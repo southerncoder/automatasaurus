@@ -35,22 +35,26 @@ Load the appropriate skill based on file types:
 ## Implementation Workflow
 
 ```
-1. Create feature branch
-   git checkout -b feature/issue-{number}-{slug}
+1. Create feature branch (issue number prefix)
+   git checkout -b {issue-number}-{descriptive-slug}
+   Example: git checkout -b 42-user-authentication
 
 2. Load language skill(s) for the task
 
 3. Review issue requirements
    gh issue view {number}
 
-4. Implement solution following coding standards
+4. Implement solution with frequent commits
+   - Commit at each logical checkpoint
+   - Don't wait until everything is done
+   - See "Commit Strategy" below
 
-5. Write tests for new code
+5. Write tests for new code (commit when tests are written)
 
 6. Run tests (track attempts)
    Attempt 1: Run tests
    - If pass → Continue to PR
-   - If fail → Debug, fix, try again
+   - If fail → Debug, fix, try again (commit the fix)
    ...
    Attempt 5: If still failing → Escalate to Architect
 
@@ -58,6 +62,79 @@ Load the appropriate skill based on file types:
 
 8. Open PR with comprehensive description
 ```
+
+## Branch Naming
+
+**Format:** `{issue-number}-{descriptive-slug}`
+
+The issue number comes FIRST as a prefix for easy identification.
+
+```bash
+# Good branch names
+git checkout -b 42-user-authentication
+git checkout -b 15-fix-login-redirect
+git checkout -b 108-add-password-reset-flow
+git checkout -b 7-update-api-error-handling
+
+# Bad branch names
+git checkout -b feature/user-auth          # Missing issue number
+git checkout -b user-authentication-42     # Issue number should be prefix
+git checkout -b 42                         # Not descriptive
+git checkout -b fix-stuff                  # Missing issue number, not descriptive
+```
+
+## Commit Strategy
+
+**Commit frequently at logical checkpoints.** Don't wait until everything is done.
+
+### When to Commit
+
+| Checkpoint | Example Commit |
+|------------|----------------|
+| Initial scaffolding | `Add User model and migration (#42)` |
+| Core logic complete | `Implement password hashing (#42)` |
+| API endpoint working | `Add registration endpoint (#42)` |
+| Tests written | `Add tests for user registration (#42)` |
+| Bug fix during dev | `Fix email validation regex (#42)` |
+| Refactor/cleanup | `Extract validation to helper (#42)` |
+| After addressing review | `Address PR feedback: add null check (#42)` |
+
+### Commit Message Format
+
+```
+<type>: <concise description> (#issue)
+```
+
+**Types:** `feat`, `fix`, `refactor`, `test`, `docs`, `chore`
+
+### Good Commit Messages
+
+```bash
+git commit -m "feat: Add User model with email validation (#42)"
+git commit -m "feat: Implement registration endpoint (#42)"
+git commit -m "test: Add unit tests for registration (#42)"
+git commit -m "fix: Handle duplicate email error (#42)"
+git commit -m "refactor: Extract auth logic to service (#42)"
+git commit -m "docs: Add API documentation for /register (#42)"
+```
+
+### Bad Commit Messages
+
+```bash
+git commit -m "WIP"                    # Not descriptive
+git commit -m "fix stuff"              # What stuff?
+git commit -m "updates"                # What updates?
+git commit -m "asdfasdf"               # Meaningless
+git commit -m "Add user registration, password hashing, validation, tests, and error handling"  # Too much in one commit
+```
+
+### Commit Frequency Guidelines
+
+- **Too few commits:** One giant commit with all changes makes review hard and history useless
+- **Too many commits:** "fix typo", "fix typo again", "oops" clutters history
+- **Just right:** Each commit represents a logical, working step
+
+**Rule of thumb:** If you could describe the commit in one clear sentence, it's the right size.
 
 ## Retry and Escalation Protocol
 
@@ -202,12 +279,12 @@ General principles (see language skills for specifics):
 
 ## Git Workflow
 
-1. Create feature branch: `git checkout -b feature/issue-{number}-{slug}`
-2. Make atomic commits with clear messages
-3. Commit format: `feat: description (#issue)` or `fix: description (#issue)`
-4. Push branch: `git push -u origin feature/issue-{number}-{slug}`
+1. Create branch with issue prefix: `git checkout -b {number}-{slug}`
+2. Commit frequently at logical checkpoints
+3. Commit format: `type: description (#issue)`
+4. Push branch: `git push -u origin {number}-{slug}`
 5. Create PR: `gh pr create`
-6. Address review feedback
+6. Address review feedback (commit each fix)
 7. Await merge by Tester
 
 ## Commands
@@ -216,10 +293,19 @@ General principles (see language skills for specifics):
 
 ### Git Commands (universal)
 ```bash
-git checkout -b feature/issue-{number}-{slug}
+# Create branch (issue number first)
+git checkout -b 42-user-authentication
+
+# Stage and commit at each checkpoint
 git add .
-git commit -m "feat: description (#{number})"
-git push -u origin feature/issue-{number}-{slug}
+git commit -m "feat: Add User model (#42)"
+
+# Continue working, commit again
+git add .
+git commit -m "feat: Add registration endpoint (#42)"
+
+# Push when ready for PR (or periodically)
+git push -u origin 42-user-authentication
 ```
 
 ### GitHub Commands

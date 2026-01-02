@@ -5,6 +5,7 @@
       "Bash(gh:*)",
       "Bash(npm:*)",
       "Bash(npx:*)",
+      "Bash(*/.claude/hooks/*)",
       "WebSearch"
     ],
     "deny": [
@@ -22,6 +23,10 @@
             "type": "prompt",
             "prompt": "Evaluate whether Claude should stop working. Context: $ARGUMENTS\n\nAs the orchestrating evaluator, check:\n1. Has the assigned task been fully completed?\n2. Are there any errors or failing tests that need to be addressed?\n3. Has the work been properly documented in GitHub issues/PRs as required?\n4. Have all relevant personas/agents been consulted for their domain expertise?\n5. Is there follow-up work that should be tracked?\n\nRespond with JSON:\n- decision: 'approve' (allow stop) or 'block' (continue working)\n- reason: explanation for your decision\n- systemMessage: any warnings or notes for the user",
             "timeout": 60
+          },
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR/.claude/hooks/on-stop.sh\""
           }
         ]
       }
@@ -50,6 +55,8 @@
   },
   "env": {
     "WORKFLOW_MODE": "automated",
-    "GITHUB_WORKFLOW": "enabled"
+    "GITHUB_WORKFLOW": "enabled",
+    "AUTOMATASAURUS_SOUND": "true",
+    "AUTOMATASAURUS_LOG": "/tmp/automatasaurus.log"
   }
 }

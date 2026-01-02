@@ -6,6 +6,8 @@ An automated software development workflow powered by Claude Code. Uses speciali
 
 Automatasaurus creates a team of AI personas that work together through GitHub issues and PRs to build software. Each persona has specific expertise and responsibilities, and they coordinate their work using established software development practices.
 
+**This repository contains the workflow orchestration framework.** Install it into your project to enable AI-assisted software development with coordinated agents.
+
 ## Personas
 
 | Persona | Expertise | Responsibilities |
@@ -14,7 +16,7 @@ Automatasaurus creates a team of AI personas that work together through GitHub i
 | **Product Manager** | Coordination | Roadmaps, milestones, release planning, stakeholder communication |
 | **Architect** | Design | System design, ADRs, technology decisions, patterns |
 | **Developer** | Implementation | Feature development, bug fixes, PRs, code quality |
-| **Tester** | Quality | Test planning, automated tests, acceptance validation |
+| **Tester** | Quality | Test planning, automated tests, E2E testing with Playwright |
 | **SecOps** | Security | Security reviews, vulnerability assessment, compliance |
 | **UI/UX Designer** | Experience | User flows, component specs, accessibility |
 
@@ -23,49 +25,147 @@ Automatasaurus creates a team of AI personas that work together through GitHub i
 - **Stop Hooks**: Intelligent evaluation ensures tasks are complete before stopping
 - **Subagent Coordination**: Specialized agents for each role with appropriate tools and models
 - **GitHub Integration**: All work coordinated through issues, PRs, and milestones
-- **Skills**: Reusable workflows for common tasks
+- **Playwright MCP**: Browser automation for E2E testing and visual verification
+- **Notifications**: Desktop alerts when agents need attention, approval, or finish work
+- **Language Skills**: On-demand coding standards for Python, JavaScript, CSS
+- **Project Commands**: Configurable commands for any project stack
 - **Extended Sessions**: Designed for autonomous work over extended periods
+
+## Prerequisites
+
+- [Claude Code CLI](https://claude.ai/code) installed and authenticated
+- [GitHub CLI](https://cli.github.com/) (`gh`) installed and authenticated
+- Node.js (for Playwright MCP and npm-based projects)
+
+**GitHub CLI Setup:**
+```bash
+# Install (macOS)
+brew install gh
+
+# Authenticate
+gh auth login
+
+# Verify
+gh auth status
+```
+
+The agents use GitHub CLI to create issues, pull requests, manage milestones, and coordinate work.
 
 ## Project Structure
 
 ```
 automatasaurus/
-├── CLAUDE.md                    # Claude Code project context
-├── README.md                    # This file
+├── CLAUDE.md                              # Claude Code project context
+├── README.md                              # This file
+├── .mcp.json                              # MCP server configuration (Playwright)
 └── .claude/
-    ├── settings.json            # Claude Code settings with hooks
-    ├── agents/                  # Persona subagents
+    ├── settings.json                      # Claude Code settings with hooks
+    ├── commands.md                        # Project-specific commands
+    ├── commands.template.md               # Template for new projects
+    ├── hooks/                             # Notification and stop hooks
+    │   ├── notify.sh                      # Desktop notification system
+    │   ├── on-stop.sh                     # Auto-notify on stop
+    │   └── request-attention.sh           # Explicit attention requests
+    ├── agents/                            # Persona subagents
     │   ├── product-owner/
     │   ├── product-manager/
     │   ├── architect/
     │   ├── developer/
-    │   ├── tester/
+    │   ├── tester/                        # Includes Playwright MCP access
     │   ├── secops/
     │   └── ui-ux/
-    └── skills/                  # Reusable skills
-        ├── github-workflow/
-        └── agent-coordination/
+    └── skills/                            # Reusable skills
+        ├── github-workflow/               # Issue/PR management
+        ├── agent-coordination/            # Multi-agent patterns
+        ├── project-commands/              # Command discovery
+        ├── notifications/                 # Alert system docs
+        ├── python-standards/              # Python conventions
+        ├── javascript-standards/          # JS/TS conventions
+        └── css-standards/                 # CSS/SCSS conventions
 ```
 
-## Getting Started
+## Installation
 
-### Prerequisites
+### Future: CLI Tool (Coming Soon)
 
-- [Claude Code CLI](https://claude.com/claude-code) installed
-- [GitHub CLI](https://cli.github.com/) (`gh`) installed and authenticated
-- A GitHub repository to work with
+```bash
+# Install globally
+npm install -g automatasaurus
 
-### Usage
+# Initialize in your project
+cd your-project
+automatasaurus init
+```
 
-1. Clone this repository or copy the `.claude` folder to your project
-2. Customize the agents for your team's needs
-3. Start Claude Code in your project directory:
+### Current: Manual Installation
+
+1. Clone this repository
+2. Copy the `.claude` folder and `.mcp.json` to your project
+3. Customize `.claude/commands.md` with your project's commands
+4. Ensure GitHub CLI is authenticated: `gh auth status`
+5. Start Claude Code:
 
 ```bash
 claude
 ```
 
-4. Begin with a high-level request:
+## Configuration
+
+### Project Commands
+
+After installation, edit `.claude/commands.md` to configure your project's commands:
+
+```markdown
+## Quick Reference
+
+| Action | Command |
+|--------|---------|
+| Install dependencies | `npm install` |
+| Start development server | `npm run dev` |
+| Run all tests | `npm test` |
+| Run E2E tests | `npx playwright test` |
+```
+
+A template is provided in `.claude/commands.template.md` with placeholders for common stacks.
+
+### MCP Servers
+
+The `.mcp.json` file configures Playwright for browser testing:
+
+```json
+{
+  "mcpServers": {
+    "playwright": {
+      "command": "npx",
+      "args": ["@playwright/mcp@latest"]
+    }
+  }
+}
+```
+
+### Notifications
+
+Configure notification behavior via environment variables:
+
+```bash
+# Disable sound alerts
+export AUTOMATASAURUS_SOUND=false
+
+# Custom log location
+export AUTOMATASAURUS_LOG=/path/to/log
+```
+
+## Usage
+
+### Starting a Session
+
+```bash
+claude
+```
+
+### High-Level Requests
+
+Begin with a high-level request:
 
 ```
 Create a user authentication system with login, logout, and password reset
@@ -76,17 +176,45 @@ The system will automatically:
 - Design the architecture (Architect)
 - Review security implications (SecOps)
 - Implement the solution (Developer)
-- Write tests (Tester)
+- Write and run tests (Tester with Playwright)
 - Create GitHub issues and PRs along the way
+- Notify you when questions arise or work completes
 
 ### Invoking Specific Agents
-
-You can invoke agents directly:
 
 ```
 Use the architect agent to review the database schema
 Use the secops agent to audit our dependencies
 Use the tester agent to create a test plan for the API
+Use the tester agent with playwright to verify the checkout flow
+```
+
+### Browser Testing with Playwright
+
+The tester agent can perform visual verification:
+
+```
+Use playwright mcp to open a browser to http://localhost:3000
+Use playwright mcp to click the login button
+Use playwright mcp to fill the email field with test@example.com
+Use playwright mcp to take a screenshot
+```
+
+## Notifications
+
+Agents send desktop notifications when they need your attention:
+
+| Type | Trigger | Sound |
+|------|---------|-------|
+| **Question** | Agent has a blocking question | Submarine |
+| **Approval** | PR or decision needs approval | Submarine |
+| **Stuck** | Agent encountered an issue | Basso |
+| **Complete** | All work finished | Hero |
+
+Agents can also explicitly request attention:
+```bash
+.claude/hooks/request-attention.sh question "Which database should we use?"
+.claude/hooks/request-attention.sh complete "Feature implementation done"
 ```
 
 ## How It Works
@@ -122,54 +250,90 @@ Tester → Developer → (Architect if complex) → Tester (verify)
 SecOps → Architect → Developer → SecOps (verify)
 ```
 
-## Configuration
+## Language Skills
 
-### Settings (`settings.json`)
+The developer agent loads language-specific skills on demand:
 
-The settings file configures:
-- **Permissions**: Allowed and denied tool patterns
-- **Stop Hooks**: Prompt-based evaluation for task completion
-- **SubagentStop Hooks**: Persona handoff validation
-- **Session Hooks**: Initialization on session start
+| Language | Skill | Covers |
+|----------|-------|--------|
+| Python | `python-standards` | PEP 8, type hints, pytest, async patterns |
+| JavaScript/TypeScript | `javascript-standards` | ESM, React, testing, error handling |
+| CSS/SCSS | `css-standards` | BEM, CSS variables, flexbox/grid, accessibility |
 
-### Agents (`agents/<name>/AGENT.md`)
-
-Each agent is defined with:
-- **name**: Unique identifier
-- **description**: When to invoke this agent
-- **tools**: Available tools (Read, Edit, Bash, etc.)
-- **model**: Which model to use (opus, sonnet, haiku)
-- **System prompt**: Detailed instructions for the persona
-
-### Skills (`skills/<name>/SKILL.md`)
-
-Skills provide reusable workflows:
-- **github-workflow**: Issue and PR management
-- **agent-coordination**: Multi-agent orchestration patterns
+Skills are loaded automatically based on the files being worked on.
 
 ## Customization
 
 ### Adding a New Persona
 
 1. Create `.claude/agents/<persona-name>/AGENT.md`
-2. Define the frontmatter (name, description, tools, model)
+2. Define the frontmatter:
+   ```yaml
+   ---
+   name: persona-name
+   description: When to use this agent
+   tools: Read, Edit, Write, Bash, Grep, Glob
+   model: sonnet
+   ---
+   ```
 3. Write a detailed system prompt
 4. Update `CLAUDE.md` with the new persona
 
 ### Creating Skills
 
 1. Create `.claude/skills/<skill-name>/SKILL.md`
-2. Add frontmatter with name and description
+2. Add frontmatter:
+   ```yaml
+   ---
+   name: skill-name
+   description: What this skill does and when to use it
+   ---
+   ```
 3. Document the workflow or knowledge
 4. Skills are loaded on-demand when relevant
 
+### Configuring Commands for Your Stack
+
+Edit `.claude/commands.md` or use the template:
+
+**Node.js:**
+```
+{{install}}: npm install
+{{dev}}: npm run dev
+{{test}}: npm test
+```
+
+**Python:**
+```
+{{install}}: pip install -r requirements.txt
+{{dev}}: python manage.py runserver
+{{test}}: pytest
+```
+
+**Go:**
+```
+{{install}}: go mod download
+{{dev}}: go run .
+{{test}}: go test ./...
+```
+
+## Roadmap
+
+- [ ] CLI tool for easy installation (`automatasaurus init`)
+- [ ] Project detection and automatic command configuration
+- [ ] Additional MCP integrations (database, API testing)
+- [ ] Custom persona templates
+- [ ] Workflow visualization
+- [ ] Integration with CI/CD
+
 ## Contributing
 
-This is an experimental framework for autonomous software development. Contributions welcome:
+Contributions welcome:
 - New persona definitions
 - Improved stop hook prompts
-- Additional skills
+- Additional skills and language standards
 - Workflow patterns
+- CLI tool development
 
 ## References
 
@@ -177,6 +341,8 @@ This is an experimental framework for autonomous software development. Contribut
 - [Subagents Reference](https://code.claude.com/docs/en/sub-agents)
 - [Hooks Reference](https://code.claude.com/docs/en/hooks)
 - [Skills Reference](https://code.claude.com/docs/en/skills)
+- [Playwright MCP](https://github.com/microsoft/playwright-mcp)
+- [GitHub CLI](https://cli.github.com/)
 - [Best Practices](https://www.anthropic.com/engineering/claude-code-best-practices)
 
 ## License

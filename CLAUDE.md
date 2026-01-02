@@ -6,19 +6,44 @@ This project is an automated software development workflow powered by Claude Cod
 
 Automatasaurus enables extended, autonomous software development sessions by coordinating multiple specialized agents that work together through GitHub issues and PRs.
 
+**This repository contains the workflow orchestration framework.** It is designed to be installed into target projects as a CLI tool.
+
+## Project Commands
+
+**IMPORTANT**: Always check `.claude/commands.md` for project-specific commands before running any development, test, or build commands. Each target project will have its own commands configured.
+
+Common command categories:
+- `install` - Install dependencies
+- `dev` - Start development server
+- `test` - Run tests
+- `test:e2e` - Run E2E tests with Playwright
+- `build` - Build for production
+- `lint` - Check code style
+
 ## Personas/Agents
 
 The following agents are available in `.claude/agents/`:
 
-| Agent | Role | Model |
-|-------|------|-------|
-| `product-owner` | Requirements, user stories, acceptance criteria | Opus |
-| `product-manager` | Roadmap, milestones, release coordination | Sonnet |
-| `architect` | System design, ADRs, technical decisions | Opus |
-| `developer` | Feature implementation, bug fixes, PRs | Sonnet |
-| `tester` | Test planning, automated tests, QA | Sonnet |
-| `secops` | Security reviews, vulnerability assessment | Opus |
-| `ui-ux` | User experience, accessibility, design specs | Sonnet |
+| Agent | Role | Model | Special Tools |
+|-------|------|-------|---------------|
+| `product-owner` | Requirements, user stories, acceptance criteria | Opus | GitHub CLI |
+| `product-manager` | Roadmap, milestones, release coordination | Sonnet | GitHub CLI |
+| `architect` | System design, ADRs, technical decisions | Opus | - |
+| `developer` | Feature implementation, bug fixes, PRs | Sonnet | Full edit access |
+| `tester` | Test planning, automated tests, QA, E2E testing | Sonnet | Playwright MCP |
+| `secops` | Security reviews, vulnerability assessment | Opus | - |
+| `ui-ux` | User experience, accessibility, design specs | Sonnet | - |
+
+## MCP Integrations
+
+### Playwright MCP
+The tester agent has access to Playwright MCP for browser-based testing:
+- Visual verification of UI changes
+- E2E user flow testing
+- Screenshot capture
+- Interactive debugging
+
+Usage: `Use playwright mcp to open a browser to [URL]`
 
 ## Workflow Coordination
 
@@ -35,22 +60,6 @@ The system uses intelligent stop hooks to ensure:
 2. All relevant personas have been consulted
 3. Work is properly documented in GitHub
 4. No errors or failing tests remain
-
-## Common Commands
-
-```bash
-# Create a feature issue
-gh issue create --title "Feature: ..." --body "..." --label "feature"
-
-# Create a PR
-gh pr create --title "..." --body "..."
-
-# Check issue status
-gh issue list
-
-# Run tests
-npm test
-```
 
 ## Development Conventions
 
@@ -77,6 +86,7 @@ Agents can be invoked explicitly:
 Use the architect agent to design the authentication system
 Use the secops agent to review this PR for security issues
 Use the tester agent to create a test plan for this feature
+Use the tester agent with playwright to verify the login flow
 ```
 
 Or they are automatically selected based on task context.
@@ -87,3 +97,40 @@ This project uses the `gh` CLI for GitHub operations. Ensure you are authenticat
 ```bash
 gh auth status
 ```
+
+## Skills
+
+Available skills in `.claude/skills/`:
+
+### Workflow Skills
+- `github-workflow` - Issue and PR templates, milestone management
+- `agent-coordination` - Multi-agent workflow patterns
+- `project-commands` - Finding and using project-specific commands
+- `notifications` - User notification system for questions, approvals, and alerts
+
+### Language Standards
+- `python-standards` - Python coding conventions, typing, testing patterns
+- `javascript-standards` - JS/TS conventions, React patterns, testing
+- `css-standards` - CSS/SCSS conventions, layouts, accessibility
+
+**Note**: Load the appropriate language skill before writing code in that language.
+
+## Notification System
+
+Agents can alert the user when attention is needed:
+
+```bash
+# Question that blocks progress
+.claude/hooks/request-attention.sh question "Which approach should I take?"
+
+# Approval needed
+.claude/hooks/request-attention.sh approval "PR is ready for review"
+
+# Got stuck
+.claude/hooks/request-attention.sh stuck "Cannot resolve this error"
+
+# Work complete
+.claude/hooks/request-attention.sh complete "All tasks finished"
+```
+
+Notifications are also sent automatically on stop based on context.

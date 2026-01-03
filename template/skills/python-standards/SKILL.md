@@ -5,6 +5,14 @@ description: Python coding standards, conventions, and best practices. Use when 
 
 # Python Coding Standards
 
+## New Project Preferences
+
+When starting new Python projects, prefer:
+
+- **uv** for package/environment management (fast, modern alternative to pip/venv)
+- **FastAPI** for web APIs
+- **Pydantic** for data validation and serialization
+
 ## Style Guide
 
 Follow PEP 8 with these project-specific additions:

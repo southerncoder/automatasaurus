@@ -5,6 +5,16 @@ description: JavaScript and TypeScript coding standards, conventions, and best p
 
 # JavaScript/TypeScript Coding Standards
 
+## New Project Preferences
+
+When starting new frontend projects, prefer:
+
+- **React 18** with TypeScript
+- **Vite** for development server
+- **Parcel** for production bundling
+- **shadcn/ui** for components
+- **Tailwind CSS 3** for styling
+
 ## General Preferences
 
 - **TypeScript over JavaScript** for new code

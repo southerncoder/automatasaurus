@@ -160,6 +160,17 @@ The system uses intelligent stop hooks to ensure:
 4. Proper agent handoffs
 5. Notifications sent when stuck or complete
 
+## Technology Preferences
+
+- **Always use typings** in all languages (TypeScript, Python type hints, etc.)
+- **Defer to existing patterns** - when working in existing codebases, use existing tools, frameworks, patterns, and dependencies
+- **Minimal new dependencies** - add new dependencies only out of necessity
+
+For stack-specific preferences when starting new projects, see the relevant skills:
+- `python-standards` - Python tooling and framework preferences
+- `javascript-standards` - Frontend framework and tooling preferences
+- `infrastructure-standards` - Cloud, IaC, and local dev preferences
+
 ## Development Conventions
 
 ### Git Workflow

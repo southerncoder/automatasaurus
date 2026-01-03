@@ -2,6 +2,30 @@
 
 An automated software development workflow powered by Claude Code. Uses specialized subagents, stop hooks, and skills to enable extended autonomous development sessions with multiple coordinated personas.
 
+## Quick Start
+
+Get automatasaurus running in your project in under a minute:
+
+```bash
+# Prerequisites: Claude Code CLI and GitHub CLI must be installed
+# Install: https://claude.ai/code and https://cli.github.com/
+
+# Initialize in your project
+cd your-project
+npx automatasaurus init
+
+# Start Claude Code
+claude
+
+# Begin discovery for a new feature
+/discovery user authentication system
+
+# Or work through existing issues
+/work-all
+```
+
+That's it! The framework installs agents, skills, hooks, and slash commands into your project. See [Prerequisites](#prerequisites) for detailed setup instructions.
+
 ## Overview
 
 Automatasaurus creates a team of AI personas that work together through GitHub issues and PRs to build software. Each persona has specific expertise and responsibilities, and they coordinate their work using established software development practices.
@@ -75,16 +99,16 @@ User: "Start working on the issues"
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-## Personas
+## Agents
 
-| Persona | Role | Responsibilities |
-|---------|------|------------------|
-| **Product Owner** | Requirements | User stories, acceptance criteria, issue creation, follow-ups |
-| **Product Manager** | Coordination | Leads discovery, drives the loop, selects issues, routes to specialists |
-| **Architect** | Design | System design, ADRs, required PR reviews, stuck-issue analysis |
-| **Developer** | Implementation | Feature development, bug fixes, PRs, addresses feedback |
-| **Tester** | Quality | Test execution, Playwright verification, final merge |
-| **UI/UX Designer** | Experience | Design specs, accessibility (optional, can decline for backend PRs) |
+| Agent | Model | Role | Responsibilities |
+|-------|-------|------|------------------|
+| **Architect** | Opus | Design | System design, ADRs, required PR reviews, stuck-issue analysis |
+| **Developer** | Sonnet | Implementation | Feature development, bug fixes, PRs, addresses feedback |
+| **Designer** | Sonnet | Experience | UI/UX specs, accessibility (optional, can decline for backend PRs) |
+| **Tester** | Sonnet | Quality | Test execution, Playwright verification, final approval |
+
+The main Claude session handles coordination (Product Manager) and requirements gathering (Product Owner) roles using skills.
 
 ## Agent Comment Format
 
@@ -94,9 +118,8 @@ All agents prefix their comments with their identity:
 **[PM]** Starting work on issue #5. Routing to Developer.
 **[Developer]** Fixed in commit abc1234. Ready for re-review.
 **[Architect]** LGTM. Clean separation of concerns.
-**[UI/UX]** N/A - No UI changes in this PR.
+**[Designer]** N/A - No UI changes in this PR.
 **[Tester]** Verified and approved. Merging.
-**[Product Owner]** Created follow-up issue #12 for discovered scope.
 ```
 
 ## Features
@@ -131,67 +154,78 @@ gh auth status
 
 ## Project Structure
 
+After running `npx automatasaurus init`, your project will have:
+
 ```
-automatasaurus/
-├── CLAUDE.md                              # Claude Code project context
-├── README.md                              # This file
-├── .mcp.json                              # MCP server configuration (Playwright)
+your-project/
+├── CLAUDE.md                    # Project context (automatasaurus block merged in)
+├── .automatasaurus/             # Framework files (managed by installer)
+│   ├── README.md                # Framework documentation
+│   ├── agents/                  # AI persona agents
+│   │   ├── architect/           # Design & required PR reviews
+│   │   ├── developer/           # Implementation & PRs
+│   │   ├── designer/            # UI/UX design specs
+│   │   └── tester/              # QA, Playwright, merge authority
+│   ├── skills/                  # Knowledge modules
+│   │   ├── workflow-orchestration/
+│   │   ├── github-workflow/
+│   │   ├── github-issues/
+│   │   ├── requirements-gathering/
+│   │   ├── user-stories/
+│   │   ├── pr-writing/
+│   │   ├── code-review/
+│   │   ├── agent-coordination/
+│   │   ├── project-commands/
+│   │   ├── notifications/
+│   │   ├── python-standards/
+│   │   ├── javascript-standards/
+│   │   ├── infrastructure-standards/
+│   │   └── css-standards/
+│   ├── hooks/                   # Shell scripts for notifications
+│   │   ├── notify.sh
+│   │   ├── on-stop.sh
+│   │   └── request-attention.sh
+│   └── commands/                # Slash command definitions
+│       ├── discovery.md
+│       ├── work.md
+│       ├── work-all.md
+│       └── work-plan.md
 └── .claude/
-    ├── settings.json                      # Claude Code settings with hooks
-    ├── commands/                          # Slash commands
-    │   ├── discovery.md                   # /discovery - Discovery mode
-    │   ├── work-all.md                    # /work-all - Process all issues
-    │   └── work.md                        # /work - Process single issue
-    ├── commands.md                        # Project-specific commands
-    ├── commands.template.md               # Template for new projects
-    ├── hooks/                             # Notification and stop hooks
-    │   ├── notify.sh                      # Desktop notification system
-    │   ├── on-stop.sh                     # Auto-notify on stop
-    │   └── request-attention.sh           # Explicit attention requests
-    ├── agents/                            # Persona subagents
-    │   ├── product-owner/                 # Requirements & issue creation
-    │   ├── product-manager/               # Workflow coordinator
-    │   ├── architect/                     # Design & required PR reviews
-    │   ├── developer/                     # Implementation & PRs
-    │   ├── tester/                        # QA, Playwright, merge authority
-    │   └── ui-ux/                         # Design specs (optional)
-    └── skills/                            # Reusable skills
-        ├── workflow-orchestration/        # Full workflow documentation
-        ├── github-workflow/               # Issue/PR/label management
-        ├── github-issues/                 # Task breakdown, issue sizing, milestones
-        ├── pr-writing/                    # PR description best practices
-        ├── code-review/                   # Code review best practices
-        ├── agent-coordination/            # Multi-agent patterns
-        ├── project-commands/              # Command discovery
-        ├── notifications/                 # Alert system docs
-        ├── python-standards/              # Python conventions
-        ├── javascript-standards/          # JS/TS conventions
-        └── css-standards/                 # CSS/SCSS conventions
+    ├── settings.json            # Claude Code settings (automatasaurus hooks merged in)
+    ├── commands.md              # Project-specific commands (you edit this)
+    ├── agents/ → .automatasaurus/agents/     # Symlinks
+    ├── skills/ → .automatasaurus/skills/
+    ├── hooks/ → .automatasaurus/hooks/
+    └── commands/ → .automatasaurus/commands/
 ```
+
+**Note:** Files in `.automatasaurus/` are managed by the installer and updated via `npx automatasaurus update`. Add your own custom agents/skills directly to `.claude/` (not as symlinks).
 
 ## Installation
 
-### Future: CLI Tool (Coming Soon)
-
 ```bash
-# Install globally
-npm install -g automatasaurus
-
-# Initialize in your project
+# Initialize automatasaurus in your project
 cd your-project
-automatasaurus init
+npx automatasaurus init
 ```
 
-### Current: Manual Installation
+This will:
+1. Copy framework files to `.automatasaurus/` directory
+2. Create symlinks in `.claude/` pointing to framework files
+3. Merge automatasaurus config into `CLAUDE.md` and `.claude/settings.json`
+4. Set up slash commands, agents, skills, and hooks
 
-1. Clone this repository
-2. Copy the `.claude` folder and `.mcp.json` to your project
-3. Customize `.claude/commands.md` with your project's commands
-4. Ensure GitHub CLI is authenticated: `gh auth status`
-5. Start Claude Code:
+After initialization:
+1. Customize `.claude/commands.md` with your project's build/test commands
+2. Ensure GitHub CLI is authenticated: `gh auth status`
+3. Start Claude Code: `claude`
+
+### CLI Commands
 
 ```bash
-claude
+npx automatasaurus init      # Install into current project
+npx automatasaurus update    # Update framework files to latest
+npx automatasaurus status    # Show installation info
 ```
 
 ## Usage
@@ -389,7 +423,7 @@ The developer agent loads language-specific skills on demand:
 
 ## Roadmap
 
-- [ ] CLI tool for easy installation (`automatasaurus init`)
+- [x] CLI tool for easy installation (`automatasaurus init`)
 - [ ] Project detection and automatic command configuration
 - [ ] Additional MCP integrations (database, API testing)
 - [ ] Custom persona templates

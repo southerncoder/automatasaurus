@@ -10,8 +10,10 @@ Guidelines for writing pull request descriptions that help reviewers understand 
 ## PR Title Format
 
 ```
-<type>: <concise description>
+#<issue-number> <type>: <concise description>
 ```
+
+Always prefix the PR title with the GitHub issue number to enable easy cross-referencing.
 
 ### Types
 | Type | Use For |
@@ -27,18 +29,18 @@ Guidelines for writing pull request descriptions that help reviewers understand 
 
 ### Good Titles
 ```
-feat: Add user registration endpoint
-fix: Prevent duplicate form submissions
-refactor: Extract authentication logic into service
-docs: Add API documentation for user endpoints
+#42 feat: Add user registration endpoint
+#187 fix: Prevent duplicate form submissions
+#23 refactor: Extract authentication logic into service
+#91 docs: Add API documentation for user endpoints
 ```
 
 ### Bad Titles
 ```
-Update code                    # Too vague
-Fixed the bug                  # Which bug?
+Update code                    # Too vague, no issue number
+Fixed the bug                  # Which bug? No issue number
 WIP                           # Not ready for review
-Changes                       # Meaningless
+feat: Add login               # Missing issue number prefix
 ```
 
 ## PR Body Structure
@@ -228,7 +230,7 @@ This is a draft to get early feedback on the approach.
 
 Before marking ready for review:
 
-- [ ] Title follows `type: description` format
+- [ ] Title follows `#<issue> type: description` format
 - [ ] Summary explains what AND why
 - [ ] Issue is linked with `Closes #X`
 - [ ] Changes are listed specifically

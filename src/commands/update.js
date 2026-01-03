@@ -64,7 +64,7 @@ export async function update({ force = false } = {}) {
   console.log('\nUpdating merged files...');
 
   // CLAUDE.md
-  const claudeMdTemplate = join(templateDir, 'CLAUDE.md.block');
+  const claudeMdTemplate = join(templateDir, 'CLAUDE.block.md');
   try {
     const blockContent = await readFile(claudeMdTemplate, 'utf-8');
     await mergeBlockIntoFile(paths.claudeMd, 'CORE', blockContent);
@@ -85,7 +85,7 @@ export async function update({ force = false } = {}) {
   }
 
   // commands.md
-  const commandsTemplate = join(templateDir, 'commands.md.block');
+  const commandsTemplate = join(templateDir, 'commands.block.md');
   try {
     const blockContent = await readFile(commandsTemplate, 'utf-8');
     await mergeBlockIntoFile(paths.commands, 'COMMANDS', blockContent);

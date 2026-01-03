@@ -12,8 +12,7 @@
       "Read(./.env)",
       "Read(./.env.*)",
       "Read(./secrets/**)"
-    ],
-    "defaultMode": "default"
+    ]
   },
   "hooks": {
     "Stop": [

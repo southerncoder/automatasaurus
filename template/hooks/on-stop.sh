@@ -12,15 +12,15 @@ CONTEXT=$(cat)
 # The context contains Claude's last response
 # Order matters - check more specific patterns first
 
-# Handoff: subagent completed, passing to next agent (not user approval needed)
+# Handoff: subagent completed, passing to next agent (no notification - silent)
 if echo "$CONTEXT" | grep -qi "handing off to\|passing to\|next agent\|handoff complete\|task handed\|routing to\|subagent complete\|agent will take over"; then
-  "$NOTIFY" "Automatasaurus" "Task handed off to next agent" "handoff"
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] Subagent handoff (silent)" >> "${AUTOMATASAURUS_LOG:-/tmp/automatasaurus.log}"
   exit 0
 fi
 
-# Work continuing: orchestration is progressing (no user action needed)
+# Work continuing: orchestration is progressing (no notification - silent)
 if echo "$CONTEXT" | grep -qi "continuing with\|moving on to\|proceeding to\|next step\|processing issue\|starting work on"; then
-  "$NOTIFY" "Automatasaurus" "Workflow progressing" "progress"
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] Workflow progressing (silent)" >> "${AUTOMATASAURUS_LOG:-/tmp/automatasaurus.log}"
   exit 0
 fi
 

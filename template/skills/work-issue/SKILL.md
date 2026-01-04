@@ -67,12 +67,23 @@ Stop here.
 
 Check if issue involves UI (labels contain "ui", "frontend", or issue mentions UI work).
 
-If UI work needed and no design specs in comments:
+If UI work needed and no design specs in comments, spawn the designer agent:
 
 ```
-Use the designer agent to add UI/UX specifications to issue #{ISSUE_NUMBER}.
+Use the Task tool with:
+  subagent_type: "general-purpose"
+  model: "sonnet"
+  description: "Designer specs for issue #{ISSUE_NUMBER}"
+  prompt: |
+    You are the Designer agent. Load your role from .claude/agents/designer/AGENT.md
 
-Review the issue requirements and add design specs as a comment.
+    **[Designer]**
+
+    Add UI/UX specifications to issue #{ISSUE_NUMBER}.
+
+    1. Read the issue: gh issue view {ISSUE_NUMBER}
+    2. Review requirements and acceptance criteria
+    3. Add design specs as a comment following the template in your AGENT.md
 ```
 
 ---
@@ -84,17 +95,29 @@ Update issue label:
 gh issue edit {ISSUE_NUMBER} --add-label "in-progress" --remove-label "ready"
 ```
 
-Invoke developer agent:
+Spawn the developer agent:
 
 ```
-Use the developer agent to implement issue #{ISSUE_NUMBER}.
+Use the Task tool with:
+  subagent_type: "general-purpose"
+  model: "sonnet"
+  description: "Implement issue #{ISSUE_NUMBER}"
+  prompt: |
+    You are the Developer agent. Load your role from .claude/agents/developer/AGENT.md
 
-Context:
-- Issue: {title}
-- Acceptance criteria: {from issue body}
-- Design specs: {from designer comment, if applicable}
+    **[Developer]**
 
-Create a PR when implementation is complete. The PR must include "Closes #{ISSUE_NUMBER}".
+    Implement issue #{ISSUE_NUMBER}.
+
+    Context:
+    - Issue: {title}
+    - Acceptance criteria: {from issue body}
+    - Design specs: {from designer comment, if applicable}
+
+    1. Read the issue: gh issue view {ISSUE_NUMBER}
+    2. Implement the feature following acceptance criteria
+    3. Write tests for your implementation
+    4. Create a PR with "Closes #{ISSUE_NUMBER}" in the body
 ```
 
 Wait for developer to create PR. Get PR number from output or:
@@ -114,34 +137,66 @@ gh issue edit {ISSUE_NUMBER} --add-label "needs-review" --remove-label "in-progr
 ### Architect Review (Required)
 
 ```
-Use the architect agent to review PR #{pr_number} for technical quality.
+Use the Task tool with:
+  subagent_type: "general-purpose"
+  model: "sonnet"
+  description: "Architect review PR #{pr_number}"
+  prompt: |
+    You are the Architect agent. Load your role from .claude/agents/architect/AGENT.md
 
-Post a standardized review comment:
-- ✅ APPROVED - Architect (if acceptable)
-- ❌ CHANGES REQUESTED - Architect (if issues found)
+    **[Architect]**
+
+    Review PR #{pr_number} for technical quality.
+
+    1. Read the PR: gh pr view {pr_number}
+    2. Review the code changes for architecture, patterns, and quality
+    3. Post a standardized review comment:
+       - ✅ APPROVED - Architect (if acceptable)
+       - ❌ CHANGES REQUESTED - Architect (if issues found)
 ```
 
 ### Designer Review (If UI Changes)
 
 ```
-Use the designer agent to review PR #{pr_number} for UI/UX quality.
+Use the Task tool with:
+  subagent_type: "general-purpose"
+  model: "sonnet"
+  description: "Designer review PR #{pr_number}"
+  prompt: |
+    You are the Designer agent. Load your role from .claude/agents/designer/AGENT.md
 
-If no UI changes: Post "**[Designer]** N/A - No UI changes in this PR."
+    **[Designer]**
 
-Otherwise post standardized review comment:
-- ✅ APPROVED - Designer
-- ❌ CHANGES REQUESTED - Designer
+    Review PR #{pr_number} for UI/UX quality.
+
+    1. Read the PR: gh pr view {pr_number}
+    2. Check if there are UI changes
+    3. If no UI changes: Post "**[Designer]** N/A - No UI changes in this PR."
+    4. Otherwise post standardized review comment:
+       - ✅ APPROVED - Designer
+       - ❌ CHANGES REQUESTED - Designer
 ```
 
 ### Tester Review (Required)
 
 ```
-Use the tester agent to verify PR #{pr_number}.
+Use the Task tool with:
+  subagent_type: "general-purpose"
+  model: "sonnet"
+  description: "Tester verify PR #{pr_number}"
+  prompt: |
+    You are the Tester agent. Load your role from .claude/agents/tester/AGENT.md
 
-Run tests and perform manual verification if needed.
-Post a standardized review comment:
-- ✅ APPROVED - Tester
-- ❌ CHANGES REQUESTED - Tester
+    **[Tester]**
+
+    Verify PR #{pr_number}.
+
+    1. Read the PR: gh pr view {pr_number}
+    2. Run the test suite
+    3. Perform manual verification if needed
+    4. Post a standardized review comment:
+       - ✅ APPROVED - Tester
+       - ❌ CHANGES REQUESTED - Tester
 ```
 
 ---
@@ -156,10 +211,24 @@ gh pr view {pr_number} --comments
 **If any `❌ CHANGES REQUESTED`:**
 
 ```
-Use the developer agent to address the review feedback on PR #{pr_number}.
+Use the Task tool with:
+  subagent_type: "general-purpose"
+  model: "sonnet"
+  description: "Address feedback PR #{pr_number}"
+  prompt: |
+    You are the Developer agent. Load your role from .claude/agents/developer/AGENT.md
 
-Feedback to address:
-{summary of requested changes}
+    **[Developer]**
+
+    Address review feedback on PR #{pr_number}.
+
+    Feedback to address:
+    {summary of requested changes}
+
+    1. Read the PR and feedback: gh pr view {pr_number} --comments
+    2. Make the requested changes
+    3. Push the fixes
+    4. Comment that changes have been addressed
 ```
 
 After developer pushes fixes, re-request the relevant review(s).

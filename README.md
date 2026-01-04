@@ -438,22 +438,25 @@ The `.mcp.json` file configures Playwright for browser testing:
 
 ### Circuit Breaker Limits
 
-Configure limits in `.claude/settings.json` under `automatasaurus.limits`:
+Customize limits in `.claude/settings.local.json` (your overrides, never touched by updates):
 
 ```json
 {
   "automatasaurus": {
     "limits": {
-      "maxIssuesPerRun": 20,
-      "maxEscalationsBeforeStop": 3,
-      "maxRetriesPerIssue": 5,
-      "maxConsecutiveFailures": 3
+      "maxIssuesPerRun": 50
     }
   }
 }
 ```
 
-Custom limits survive framework updates (deep merge preserves your values).
+Default values in `.claude/settings.json`:
+- `maxIssuesPerRun`: 20
+- `maxEscalationsBeforeStop`: 3
+- `maxRetriesPerIssue`: 5
+- `maxConsecutiveFailures`: 3
+
+**Note:** Don't edit `settings.json` directly—your changes will be overwritten on update. Use `settings.local.json` for all customizations.
 
 ### Notifications
 

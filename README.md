@@ -212,14 +212,20 @@ npx automatasaurus init
 To install from a local checkout (useful for testing changes before publishing):
 
 ```bash
-# In the automatasaurus repo
-npm pack                    # Creates automatasaurus-x.x.x.tgz
+# 1. In the automatasaurus repo, create the package tarball
+cd ~/src/automatasaurus
+npm pack
+# Creates automatasaurus-0.1.0.tgz (version number from package.json)
 
-# In your target project
-cd your-project
-npm install /path/to/automatasaurus/automatasaurus-x.x.x.tgz
+# 2. In your target project, install the tarball
+cd ~/src/your-project
+npm install ~/src/automatasaurus/automatasaurus-0.1.0.tgz
+
+# 3. Run the init command
 npx automatasaurus init
 ```
+
+**Note:** Use `npm install` (not `npx install`) to add the package, then `npx automatasaurus` to run the CLI.
 
 This approach tests exactly what would be published to npm, catching any packaging issues like missing files.
 

@@ -1,0 +1,29 @@
+{
+  "name": "automatasaurus",
+  "version": "0.1.0",
+  "description": "Automated software development workflow powered by Claude Code",
+  "type": "module",
+  "bin": {
+    "automatasaurus": "./bin/cli.js"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "template/"
+  ],
+  "scripts": {
+    "test": "node --test src/**/*.test.js"
+  },
+  "keywords": [
+    "claude",
+    "claude-code",
+    "automation",
+    "ai",
+    "development"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

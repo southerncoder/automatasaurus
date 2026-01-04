@@ -42,6 +42,13 @@ export function getProjectPaths(projectRoot) {
 }
 
 /**
- * Directories that get symlinked
+ * Directories that get symlinked at subdirectory level (each subdir is a symlink)
+ * Use for directories containing multiple independent modules (agents, skills)
  */
-export const SYMLINK_DIRS = ['agents', 'skills', 'hooks', 'commands'];
+export const SUBDIR_SYMLINK_DIRS = ['agents', 'skills'];
+
+/**
+ * Directories that get symlinked at file level (each file is a symlink)
+ * Use for directories containing flat files (hooks, commands)
+ */
+export const FILE_SYMLINK_DIRS = ['hooks', 'commands'];

@@ -1,7 +1,7 @@
 import { mkdir, cp, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { getTemplateDir, getProjectPaths, getVersion, SYMLINK_DIRS } from '../lib/paths.js';
-import { symlinkDirectory, isSymlink } from '../lib/symlinks.js';
+import { getTemplateDir, getProjectPaths, getVersion, SUBDIR_SYMLINK_DIRS, FILE_SYMLINK_DIRS } from '../lib/paths.js';
+import { symlinkDirectory, symlinkSubdirectories } from '../lib/symlinks.js';
 import { mergeBlockIntoFile } from '../lib/block-merge.js';
 import { mergeJsonFile } from '../lib/json-merge.js';
 import { readManifest, writeManifest, updateManifest } from '../lib/manifest.js';
@@ -30,7 +30,8 @@ export async function update({ force = false } = {}) {
   // 1. Update .automatasaurus directory
   console.log('Updating framework files in .automatasaurus/...');
 
-  for (const dir of SYMLINK_DIRS) {
+  const allDirs = [...SUBDIR_SYMLINK_DIRS, ...FILE_SYMLINK_DIRS];
+  for (const dir of allDirs) {
     const sourceDir = join(templateDir, dir);
     const targetDir = join(paths.automatasaurus, dir);
     try {
@@ -41,18 +42,33 @@ export async function update({ force = false } = {}) {
     }
   }
 
-  // 2. Recreate symlinks (in case new files were added)
+  // 2. Recreate symlinks (in case new items were added)
   console.log('\nUpdating symlinks in .claude/...');
   const allSymlinks = [];
 
-  for (const dir of SYMLINK_DIRS) {
+  // Subdirectory-level symlinks (agents, skills)
+  for (const dir of SUBDIR_SYMLINK_DIRS) {
+    const sourceDir = join(paths.automatasaurus, dir);
+    const targetDir = join(paths.claude, dir);
+    try {
+      const created = await symlinkSubdirectories(sourceDir, targetDir);
+      for (const subdir of created) {
+        allSymlinks.push(`${dir}/${subdir}`);
+      }
+      console.log(`  Updated ${dir}/ (${created.length} subdirs)`);
+    } catch (error) {
+      if (error.code !== 'ENOENT') throw error;
+    }
+  }
+
+  // File-level symlinks (hooks, commands)
+  for (const dir of FILE_SYMLINK_DIRS) {
     const sourceDir = join(paths.automatasaurus, dir);
     const targetDir = join(paths.claude, dir);
     try {
       const created = await symlinkDirectory(sourceDir, targetDir);
       for (const file of created) {
-        const symlinkPath = join(dir, file);
-        allSymlinks.push(symlinkPath);
+        allSymlinks.push(`${dir}/${file}`);
       }
       console.log(`  Updated ${dir}/ (${created.length} files)`);
     } catch (error) {

@@ -1,6 +1,5 @@
-import { stat, readlink } from 'node:fs/promises';
 import { join } from 'node:path';
-import { getProjectPaths, getVersion, SYMLINK_DIRS } from '../lib/paths.js';
+import { getProjectPaths, getVersion, SUBDIR_SYMLINK_DIRS } from '../lib/paths.js';
 import { readManifest } from '../lib/manifest.js';
 import { isSymlink } from '../lib/symlinks.js';
 
@@ -44,7 +43,10 @@ Merged blocks:   ${manifest.merged_blocks.length}
     const linked = await isSymlink(fullPath);
     const status = linked ? 'OK' : 'BROKEN';
     if (!linked) brokenCount++;
-    console.log(`  ${status.padEnd(6)} ${symlinkPath}`);
+    // Add trailing slash for directory symlinks (agents, skills)
+    const isDir = SUBDIR_SYMLINK_DIRS.some(dir => symlinkPath.startsWith(`${dir}/`));
+    const displayPath = isDir ? `${symlinkPath}/` : symlinkPath;
+    console.log(`  ${status.padEnd(6)} ${displayPath}`);
   }
 
   if (manifest.symlinks.length > 10) {

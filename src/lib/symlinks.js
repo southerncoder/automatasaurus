@@ -90,3 +90,38 @@ export async function symlinkDirectory(sourceDir, targetDir, exclude = []) {
 
   return created;
 }
+
+/**
+ * Create symlinks for each subdirectory in source to target.
+ * For example, if sourceDir has subdirs 'foo' and 'bar', creates:
+ *   targetDir/foo -> sourceDir/foo
+ *   targetDir/bar -> sourceDir/bar
+ *
+ * Returns array of subdirectory names that were symlinked.
+ */
+export async function symlinkSubdirectories(sourceDir, targetDir) {
+  // Ensure target directory exists
+  await mkdir(targetDir, { recursive: true });
+
+  const created = [];
+
+  try {
+    const entries = await readdir(sourceDir, { withFileTypes: true });
+
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue;
+
+      const source = join(sourceDir, entry.name);
+      const target = join(targetDir, entry.name);
+
+      await createSymlink(source, target);
+      created.push(entry.name);
+    }
+  } catch (error) {
+    if (error.code !== 'ENOENT') {
+      throw error;
+    }
+  }
+
+  return created;
+}

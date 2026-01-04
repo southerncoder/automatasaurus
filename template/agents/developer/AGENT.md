@@ -40,10 +40,13 @@ Before writing code:
 
 **Format:** `{issue-number}-{descriptive-slug}`
 
+Keep it simple - just the issue number and a short description. No `feat/`, `feature/`, `fix/`, or other prefixes.
+
 ```bash
 git checkout main && git pull            # Always start from latest main
 git checkout -b 42-user-authentication   # Good
-git checkout -b feature/user-auth        # Bad (no issue number)
+git checkout -b feature/42-user-auth     # Bad (unnecessary prefix)
+git checkout -b feat/user-auth           # Bad (prefix and no issue number)
 ```
 
 ## Commit Strategy

@@ -1,0 +1,11 @@
+# Test files
+**/*.test.js
+
+# Development files
+.github/
+.vscode/
+.idea/
+
+# Local development
+*.log
+.DS_Store

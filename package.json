@@ -9,7 +9,8 @@
   "files": [
     "bin/",
     "src/",
-    "template/"
+    "template/",
+    "!**/*.test.js"
   ],
   "scripts": {
     "test": "node --test src/**/*.test.js"

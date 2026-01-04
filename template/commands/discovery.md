@@ -30,34 +30,58 @@ Before starting, load:
 
 ## Phase 1: Requirements Gathering
 
-Have a conversation with the user to understand:
+**IMPORTANT: Guide the user through questions ONE AT A TIME or in small, focused groups.**
 
-### Goals & Success
-- What problem are we solving?
-- What does success look like?
-- What's the priority?
+Do NOT present all questions at once. Instead:
+1. Start with a single opening question based on context
+2. Listen to the answer, ask follow-ups as needed
+3. Naturally transition to the next topic area
+4. Keep the conversation flowing organically
 
-### Users
-- Who are the users?
-- Different user types/roles?
-- Permissions needed?
+### Conversation Flow
 
-### Core Functionality
-- Primary user flows?
-- What happens at each step?
-- Data captured and validated?
+**Start here** - Pick ONE based on what you know:
+- If no context: "What are you looking to build?"
+- If some context: "Tell me more about [specific aspect]"
+- If clear goal: "Who will be using this?"
 
-### Architecture
-- Existing tech stack?
-- Performance requirements?
-- External integrations?
-- Security requirements?
+**Topic Areas to Cover** (explore naturally, not as a checklist):
 
-### Scope
-- What's MVP vs nice-to-have?
-- What's explicitly OUT of scope?
+1. **Goals & Success**
+   - What problem are we solving?
+   - What does success look like?
+   - What's the priority?
 
-**Use the `requirements-gathering` skill checklist to ensure thoroughness.**
+2. **Users**
+   - Who are the users?
+   - Different user types/roles?
+   - Permissions needed?
+
+3. **Core Functionality**
+   - Primary user flows?
+   - What happens at each step?
+   - Data captured and validated?
+
+4. **Architecture**
+   - Existing tech stack?
+   - Performance requirements?
+   - External integrations?
+   - Security requirements?
+
+5. **Scope**
+   - What's MVP vs nice-to-have?
+   - What's explicitly OUT of scope?
+
+### Conversation Guidelines
+
+- Ask 1-2 questions at a time, maximum
+- Acknowledge answers before moving on
+- Circle back if something needs clarification
+- Summarize understanding periodically
+- Let the user drive depth on topics they care about
+- Skip areas they've already covered or that don't apply
+
+**Use the `requirements-gathering` skill checklist internally to track coverage, but don't expose the full checklist to the user.**
 
 ---
 
@@ -230,4 +254,10 @@ $ARGUMENTS
 
 ---
 
-Begin by loading the required skills, then ask clarifying questions about the user's request. Do not create any documents or issues until the discovery conversation is complete.
+## Getting Started
+
+1. Load the required skills silently
+2. Review any context provided in the request above
+3. Start with ONE focused question to begin the conversation
+4. Guide the user through discovery naturally - no question dumps
+5. Only create documents/issues after the conversation is complete and requirements are understood

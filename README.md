@@ -1,5 +1,7 @@
 # Automatasaurus
 
+<img src="logo.jpeg" alt="Automatasaurus Logo" width="200">
+
 An automated software development workflow powered by Claude Code. Uses specialized subagents, stop hooks, and skills to enable extended autonomous development sessions with multiple coordinated agents.
 
 ## Quick Start
@@ -228,6 +230,28 @@ npx automatasaurus init
 **Note:** Use `npm install` (not `npx install`) to add the package, then `npx automatasaurus` to run the CLI.
 
 This approach tests exactly what would be published to npm, catching any packaging issues like missing files.
+
+### Updating from local build
+
+When testing changes to automatasaurus, you need to reinstall the tarball before running update:
+
+```bash
+# 1. In the automatasaurus repo, create a new tarball
+cd ~/src/automatasaurus
+npm pack
+
+# 2. In your target project, reinstall and update
+cd ~/src/your-project
+npm install ~/src/automatasaurus/automatasaurus-0.1.0.tgz
+npx automatasaurus update --force
+```
+
+The `--force` flag is needed because the version number may not have changed. Without it, update will say "Already at latest version."
+
+**Alternative:** Run directly from source without packing:
+```bash
+npx ~/src/automatasaurus update --force
+```
 
 ### What init does
 

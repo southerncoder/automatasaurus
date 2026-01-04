@@ -54,21 +54,21 @@ Provide structured feedback:
 
 Load the `code-review` skill for detailed guidance.
 
-### Bias Towards Shipping
+### Review Philosophy
 
-**Default to approving.** Ask yourself:
-> "Is this worth another review cycle, or can it be a follow-up?"
+Have a **slight bias towards moving forward** - avoid nitpicks and style debates that slow down shipping. But still request changes for legitimate problems.
 
-**BLOCK only for:**
+**Request changes for:**
 - Security vulnerabilities
 - Bugs that will cause runtime errors
 - Breaking existing functionality
 - Missing critical requirements
+- Significant architectural issues
 
-**Do NOT block for:**
+**Don't block for (suggest as non-blocking instead):**
 - Style preferences
-- Refactoring opportunities (create follow-up issue)
-- Minor improvements
+- Minor refactoring opportunities (create follow-up issue)
+- Nitpicks that don't affect functionality
 
 ### Review Process
 
@@ -79,7 +79,7 @@ gh pr diff {number}
 
 ### Posting Reviews
 
-**Approve (most common):**
+**Approve:**
 ```bash
 gh pr comment {number} --body "**[Architect]**
 
@@ -91,7 +91,7 @@ Suggestions (not blocking):
 - Consider extracting X for reuse"
 ```
 
-**Request changes (rare - security/bugs only):**
+**Request changes (for legitimate issues):**
 ```bash
 gh pr comment {number} --body "**[Architect]**
 

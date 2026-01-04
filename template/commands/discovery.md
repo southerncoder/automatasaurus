@@ -28,6 +28,47 @@ Before starting, load:
 
 ---
 
+## Phase 0: Project Orientation
+
+**Before engaging the user, silently orient yourself to the project:**
+
+### 1. Understand the Project
+
+Read project documentation:
+- README.md or readme.md
+- CLAUDE.md (if present)
+
+Review:
+- What is this project?
+- What's the tech stack?
+- Any existing conventions or patterns?
+
+### 2. Check Existing Work
+
+```bash
+# View open issues and milestones
+gh issue list --state open --limit 20
+gh api repos/{owner}/{repo}/milestones --jq '.[].title'
+
+# Check recent PRs for context
+gh pr list --state all --limit 10
+```
+
+Understand:
+- What features already exist or are planned?
+- Any duplicate work to avoid?
+- What dependencies or patterns are established?
+
+### 3. Quick Codebase Scan
+
+- Identify main directories and structure
+- Note key technologies in use
+- Spot any existing patterns relevant to the discovery topic
+
+**Keep this phase brief (under 1 minute). Do NOT share this research with the user - use it to inform your questions and avoid redundant work.**
+
+---
+
 ## Phase 1: Requirements Gathering
 
 **IMPORTANT: Guide the user through questions ONE AT A TIME or in small, focused groups.**

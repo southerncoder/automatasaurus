@@ -63,6 +63,21 @@ Or if reviewing a file directly, provide feedback in conversation.
 
 When reviewing a PR for UI/UX:
 
+### Review Philosophy
+
+Have a **slight bias towards moving forward** - avoid nitpicks over minor visual details. But still request changes for legitimate UX or accessibility problems.
+
+**Request changes for:**
+- Accessibility violations (WCAG failures)
+- Broken user flows or interactions
+- Missing critical UI states (error, loading)
+- Significant usability issues
+
+**Don't block for (suggest as non-blocking instead):**
+- Minor spacing or alignment tweaks
+- Color shade preferences
+- Subjective design opinions
+
 ### 1. Determine Relevance
 
 UI-relevant changes include:

@@ -29,6 +29,14 @@ case "$TYPE" in
     SUBTITLE="Work Complete"
     SOUND_FILE="/System/Library/Sounds/Hero.aiff"
     ;;
+  handoff)
+    SUBTITLE="Task Handed Off"
+    SOUND_FILE="/System/Library/Sounds/Pop.aiff"
+    ;;
+  progress)
+    SUBTITLE="Work Continuing"
+    SOUND_FILE="/System/Library/Sounds/Tink.aiff"
+    ;;
   error)
     SUBTITLE="Error Occurred"
     SOUND_FILE="/System/Library/Sounds/Basso.aiff"

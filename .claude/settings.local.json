@@ -6,7 +6,8 @@
       "WebFetch(domain:github.com)",
       "WebFetch(domain:developer.chrome.com)",
       "Bash(tree:*)",
-      "WebFetch(domain:www.anthropic.com)"
+      "WebFetch(domain:www.anthropic.com)",
+      "Bash(npm test)"
     ]
   },
   "enableAllProjectMcpServers": true,

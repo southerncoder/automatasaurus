@@ -60,6 +60,24 @@ The installer creates `.automatasaurus/` with copied files, then symlinks `.clau
 - Installed files and their hashes
 - Symlink mappings
 
+### Layered Settings Configuration
+Settings use a layered approach to preserve user customizations across updates:
+
+```
+.claude/
+├── settings.json        # Final merged output (Claude Code reads this)
+└── settings.local.json  # User overrides (never touched by framework)
+```
+
+**Merge flow:**
+1. Framework writes defaults to `settings.json`
+2. User overrides from `settings.local.json` are merged on top
+3. User values take precedence over framework defaults
+
+**Implementation:** `src/lib/json-merge.js` exports:
+- `mergeLayeredSettings(settingsPath, localPath, frameworkSettings)` - Main merge function
+- `createLocalSettingsTemplate(localPath)` - Creates empty local file if missing
+
 ### Agent System
 Each agent in `template/agents/` has:
 - `AGENT.md` - Role definition, responsibilities, workflows
@@ -117,7 +135,7 @@ cat CLAUDE.md
 |------|----------------|
 | `CLAUDE.block.md` | Block-merge into CLAUDE.md |
 | `commands.block.md` | Block-merge into commands.md |
-| `settings.json` | Deep JSON merge |
+| `settings.json` | Layered merge (framework defaults + user's `settings.local.json`) |
 | `commands/*.md` | Direct copy |
 | `agents/*/AGENT.md` | Direct copy |
 | `skills/*/SKILL.md` | Direct copy |

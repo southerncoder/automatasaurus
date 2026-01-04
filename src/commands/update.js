@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { getTemplateDir, getProjectPaths, getVersion, SUBDIR_SYMLINK_DIRS, FILE_SYMLINK_DIRS } from '../lib/paths.js';
 import { symlinkDirectory, symlinkSubdirectories } from '../lib/symlinks.js';
 import { mergeBlockIntoFile } from '../lib/block-merge.js';
-import { mergeJsonFile } from '../lib/json-merge.js';
+import { mergeLayeredSettings, createLocalSettingsTemplate } from '../lib/json-merge.js';
 import { readManifest, writeManifest, updateManifest } from '../lib/manifest.js';
 
 export async function update({ force = false } = {}) {
@@ -89,13 +89,24 @@ export async function update({ force = false } = {}) {
     if (error.code !== 'ENOENT') throw error;
   }
 
-  // settings.json
+  // settings.json with layered config support
   const settingsTemplate = join(templateDir, 'settings.json');
   try {
     const settingsContent = await readFile(settingsTemplate, 'utf-8');
     const frameworkSettings = JSON.parse(settingsContent);
-    await mergeJsonFile(paths.settings, frameworkSettings);
+
+    // Ensure settings.local.json exists (for users upgrading from older versions)
+    const localCreated = await createLocalSettingsTemplate(paths.settingsLocal);
+    if (localCreated) {
+      console.log('  Created settings.local.json (for your customizations)');
+    }
+
+    // Merge: framework defaults + user overrides -> settings.json
+    const result = await mergeLayeredSettings(paths.settings, paths.settingsLocal, frameworkSettings);
     console.log('  Updated settings.json');
+    if (result.hasLocalOverrides) {
+      console.log('  Preserved overrides from settings.local.json');
+    }
   } catch (error) {
     if (error.code !== 'ENOENT') throw error;
   }

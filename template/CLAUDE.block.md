@@ -321,4 +321,37 @@ Limits are configured in `.claude/settings.json` under `automatasaurus.limits`:
 | `maxRetriesPerIssue` | 5 | Developer attempts before escalating to Architect |
 | `maxConsecutiveFailures` | 3 | Stop after this many failed issues in a row |
 
-**To override:** Add your own `automatasaurus.limits` section to your project's `.claude/settings.json`. Custom values survive framework updates.
+### Customizing Settings (Layered Configuration)
+
+Automatasaurus uses a **layered configuration** approach to preserve your customizations across framework updates:
+
+| File | Purpose | Updated by framework? |
+|------|---------|----------------------|
+| `.claude/settings.json` | Final merged settings (Claude Code reads this) | Yes (regenerated) |
+| `.claude/settings.local.json` | Your custom overrides | **Never** |
+
+**To customize settings:**
+
+1. Edit `.claude/settings.local.json` with your overrides:
+   ```json
+   {
+     "automatasaurus": {
+       "limits": {
+         "maxIssuesPerRun": 50,
+         "maxConsecutiveFailures": 5
+       }
+     }
+   }
+   ```
+
+2. Run `automatasaurus update` (or it happens automatically on next update)
+
+3. Your overrides are merged into `settings.json`, taking precedence over defaults
+
+**Why this approach?**
+- Framework updates can safely refresh defaults in `settings.json`
+- Your customizations in `settings.local.json` are never touched
+- You always know where to put your project-specific settings
+- Similar to `.env` / `.env.local` pattern
+
+**Tip:** Add `.claude/settings.local.json` to `.gitignore` if you want per-machine configuration.

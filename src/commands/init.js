@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { getTemplateDir, getProjectPaths, getVersion, SUBDIR_SYMLINK_DIRS, FILE_SYMLINK_DIRS } from '../lib/paths.js';
 import { symlinkDirectory, symlinkSubdirectories } from '../lib/symlinks.js';
 import { mergeBlockIntoFile } from '../lib/block-merge.js';
-import { mergeJsonFile } from '../lib/json-merge.js';
+import { mergeLayeredSettings, createLocalSettingsTemplate } from '../lib/json-merge.js';
 import { readManifest, writeManifest, createManifest, updateManifest } from '../lib/manifest.js';
 
 export async function init({ force = false } = {}) {
@@ -90,14 +90,25 @@ export async function init({ force = false } = {}) {
     console.log('  No CLAUDE.md template found, skipping');
   }
 
-  // 5. Merge settings.json
-  console.log('\nMerging settings.json...');
+  // 5. Merge settings.json with layered config support
+  console.log('\nMerging settings...');
   const settingsTemplate = join(templateDir, 'settings.json');
   try {
     const settingsContent = await readFile(settingsTemplate, 'utf-8');
     const frameworkSettings = JSON.parse(settingsContent);
-    const result = await mergeJsonFile(paths.settings, frameworkSettings);
+
+    // Create settings.local.json template if it doesn't exist
+    const localCreated = await createLocalSettingsTemplate(paths.settingsLocal);
+    if (localCreated) {
+      console.log('  Created settings.local.json (for your customizations)');
+    }
+
+    // Merge: framework defaults + user overrides -> settings.json
+    const result = await mergeLayeredSettings(paths.settings, paths.settingsLocal, frameworkSettings);
     console.log(`  ${result.created ? 'Created' : 'Updated'} settings.json`);
+    if (result.hasLocalOverrides) {
+      console.log('  Applied overrides from settings.local.json');
+    }
   } catch (error) {
     if (error.code !== 'ENOENT') throw error;
     console.log('  No settings template found, skipping');

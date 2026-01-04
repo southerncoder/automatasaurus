@@ -37,6 +37,7 @@ export function getProjectPaths(projectRoot) {
     claudeMd: join(projectRoot, 'CLAUDE.md'),
     manifest: join(projectRoot, '.claude', '.automatasaurus.manifest.json'),
     settings: join(projectRoot, '.claude', 'settings.json'),
+    settingsLocal: join(projectRoot, '.claude', 'settings.local.json'),
     commands: join(projectRoot, '.claude', 'commands.md'),
   };
 }

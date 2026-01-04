@@ -182,6 +182,22 @@ For stack-specific preferences when starting new projects, see the relevant skil
 - PRs require Architect approval before merge
 - Tester performs final verification and merge
 
+### Scope Management
+
+**Keep issues focused.** When working on an issue, you may discover additional work that is outside the current scope. Rather than expanding the issue:
+
+1. **Create a new issue** for the out-of-scope work using the `github-issues` skill
+2. **Reference it** in a comment: "Discovered while working on this - see #X"
+3. **Continue with the original scope** - don't let discoveries derail the current task
+
+This applies to:
+- Refactoring opportunities noticed during implementation
+- Bugs discovered in unrelated code
+- Missing features that would be "nice to have"
+- Technical debt items worth tracking
+
+**Important:** Before creating a new issue, check for duplicates (see `github-issues` skill).
+
 ### Code Style
 - Follow existing patterns in the codebase
 - Keep functions small and focused
@@ -200,12 +216,14 @@ Primary way to invoke workflows:
 | Command | Description |
 |---------|-------------|
 | `/discovery [feature]` | Start discovery to understand requirements and create plan |
+| `/work-plan` | Analyze open issues, create sequenced implementation plan |
 | `/work-all` | Work through all open issues autonomously |
 | `/work [issue#]` | Work on a specific issue |
 
 Examples:
 ```
 /discovery user authentication system
+/work-plan
 /work-all
 /work 42
 ```
@@ -234,7 +252,9 @@ Available skills in `.claude/skills/`:
 
 ### Workflow Skills
 - `workflow-orchestration` - Full workflow loop documentation
+- `work-issue` - Core logic for implementing a single issue (used by /work and /work-all)
 - `github-workflow` - Issue/PR management, state labels
+- `github-issues` - Issue creation, sizing, milestones
 - `pr-writing` - Best practices for writing clear PR descriptions
 - `code-review` - Best practices for performing thorough code reviews
 - `agent-coordination` - Multi-agent workflow patterns

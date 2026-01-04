@@ -113,19 +113,50 @@ If no `implementation-plan.md` exists, select issues by:
 
 ---
 
-## Spawning /work Subagent
+## Spawning Work Subagent
 
-For each selected issue:
+For each selected issue, spawn a subagent that loads and follows the `work-issue` skill.
+
+This ensures the subagent executes the **exact same logic** as the `/work` command.
+
+### Task Tool Parameters
 
 ```
-Use the Task tool with prompt:
-"Run /work {issue_number}
+subagent_type: "general-purpose"
+description: "Work on issue #{issue_number}"
+prompt: |
+  Work on GitHub issue #{issue_number}.
 
-Work on this single issue. Create PR and get all required reviews.
-Report final status clearly."
+  1. Load the `work-issue` skill from .claude/skills/work-issue/SKILL.md
+  2. Follow the skill workflow with ISSUE_NUMBER = {issue_number}
+  3. Execute all steps: dependencies, implementation, reviews
+  4. Report result using the skill's exit state format:
+     - SUCCESS: "PR #X is ready for merge"
+     - BLOCKED: "Issue #{issue_number} is blocked on #Y"
+     - ESCALATED: "Issue #{issue_number} requires human intervention"
 ```
 
-The subagent runs with isolated context. When it completes, parse its output.
+### Example Invocation
+
+```
+Use the Task tool with subagent_type "general-purpose" to work on issue #42:
+
+"Work on GitHub issue #42.
+
+Load the work-issue skill from .claude/skills/work-issue/SKILL.md and follow
+the workflow with ISSUE_NUMBER = 42.
+
+Execute all steps: check dependencies, get design specs if UI, implement via
+developer agent, coordinate reviews (Architect, Tester, Designer if UI), handle
+any change requests.
+
+Report result clearly:
+- SUCCESS: 'PR #X is ready for merge'
+- BLOCKED: 'Issue #42 is blocked on #Y'
+- ESCALATED: 'Issue #42 requires human intervention'"
+```
+
+The subagent loads the same skill that `/work` uses, ensuring identical behavior with isolated context.
 
 ---
 

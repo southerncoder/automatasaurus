@@ -1,6 +1,6 @@
 # Automatasaurus
 
-An automated software development workflow powered by Claude Code. Uses specialized subagents, stop hooks, and skills to enable extended autonomous development sessions with multiple coordinated personas.
+An automated software development workflow powered by Claude Code. Uses specialized subagents, stop hooks, and skills to enable extended autonomous development sessions with multiple coordinated agents.
 
 ## Quick Start
 
@@ -20,7 +20,10 @@ claude
 # Begin discovery for a new feature
 /discovery user authentication system
 
-# Or work through existing issues
+# Review and sequence the implementation plan
+/work-plan
+
+# Work through all issues autonomously
 /work-all
 ```
 
@@ -28,7 +31,7 @@ That's it! The framework installs agents, skills, hooks, and slash commands into
 
 ## Overview
 
-Automatasaurus creates a team of AI personas that work together through GitHub issues and PRs to build software. Each persona has specific expertise and responsibilities, and they coordinate their work using established software development practices.
+Automatasaurus creates a team of AI agents that work together through GitHub issues and PRs to build software. Each agent has specific expertise and responsibilities, and they coordinate their work using established software development practices.
 
 **This repository contains the workflow orchestration framework.** Install it into your project to enable AI-assisted software development with coordinated agents.
 
@@ -39,42 +42,43 @@ The workflow operates in two phases:
 ### Phase 1: Discovery (Interactive)
 
 ```
-User describes feature/project
+User: /discovery "feature description"
     ↓
-Product Manager: Leads discovery conversation
+Discovery command facilitates conversation:
   - Goals and success metrics
   - Users and stakeholders
   - Business logic and constraints
   - Infrastructure requirements
     ↓
-PM brings in specialists as needed:
-  - Architect: Technical feasibility, patterns
-  - Product Owner: User stories, acceptance criteria
-  - UI/UX: Design requirements
+Brings in specialists for review:
+  - Architect: Technical feasibility
+  - Designer: UI/UX considerations
     ↓
-Product Owner: Creates GitHub issues with:
+Creates GitHub issues with:
   - User stories and acceptance criteria
   - Dependencies ("Depends on #X")
   - Organized into milestones
     ↓
 User approves milestone/issue breakdown
     ↓
-User: "Start working on the issues"
+User: /work-plan (analyze dependencies, create sequence)
+    ↓
+User: /work-all
 ```
 
-### Phase 2: Autonomous Loop (PM Coordinated)
+### Phase 2: Autonomous Loop (Command Orchestrated)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│ PM COORDINATION LOOP                                                │
+│ /work-all ORCHESTRATION LOOP                                        │
 │                                                                     │
-│ 1. PM: Select next issue                                           │
+│ 1. Select next issue                                                │
 │    - Check dependencies (all deps closed?)                         │
 │    - Consider priority labels                                       │
-│    - Consult PO if unclear                                         │
+│    - Check circuit breaker limits                                  │
 │                                                                     │
-│ 2. PM: Route to specialists                                         │
-│    └→ UI/UX: Add specs if UI work needed                           │
+│ 2. Spawn /work {n} as subagent (context isolation)                 │
+│    └→ Designer: Add specs if UI work needed                        │
 │                                                                     │
 │ 3. Developer: Implement                                             │
 │    - Create branch: {issue-num}-{slug}                             │
@@ -85,17 +89,17 @@ User: "Start working on the issues"
 │                                                                     │
 │ 4. Review Cycle                                                     │
 │    ├→ Architect: REQUIRED review                                   │
-│    ├→ UI/UX: Review if UI-relevant (can decline "N/A")            │
+│    ├→ Designer: Review if UI-relevant (can decline "N/A")          │
 │    └→ Developer: Address feedback, push fixes                      │
 │                                                                     │
-│ 5. Tester: Final Verification                                       │
+│ 5. Tester: Verification                                             │
 │    - Run automated tests                                            │
 │    - Manual verification if needed (Playwright)                    │
 │    - If issues → Back to Developer                                 │
-│    - If passes → Merge PR                                          │
 │                                                                     │
-│ 6. PM: Continue to next issue                                       │
-│    └→ Loop until all issues complete                               │
+│ 6. Merge and continue                                               │
+│    - Orchestration merges PR                                       │
+│    - Loop until complete or limits reached                         │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -105,21 +109,21 @@ User: "Start working on the issues"
 |-------|-------|------|------------------|
 | **Architect** | Opus | Design | System design, ADRs, required PR reviews, stuck-issue analysis |
 | **Developer** | Sonnet | Implementation | Feature development, bug fixes, PRs, addresses feedback |
-| **Designer** | Sonnet | Experience | UI/UX specs, accessibility (optional, can decline for backend PRs) |
-| **Tester** | Sonnet | Quality | Test execution, Playwright verification, final approval |
+| **Designer** | Sonnet | Experience | UI/UX specs, accessibility, design reviews (if UI changes) |
+| **Tester** | Sonnet | Quality | Test execution, Playwright verification, required PR reviews |
 
-The main Claude session handles coordination (Product Manager) and requirements gathering (Product Owner) roles using skills.
+**Note:** Commands (`/discovery`, `/work`, `/work-all`) handle orchestration. There is no separate PM agent.
 
 ## Agent Comment Format
 
 All agents prefix their comments with their identity:
 
 ```markdown
-**[PM]** Starting work on issue #5. Routing to Developer.
+**[Orchestration]** Starting work on issue #5. Routing to Developer.
 **[Developer]** Fixed in commit abc1234. Ready for re-review.
-**[Architect]** LGTM. Clean separation of concerns.
+**[Architect]** ✅ APPROVED - Architect. Clean separation of concerns.
 **[Designer]** N/A - No UI changes in this PR.
-**[Tester]** Verified and approved. Merging.
+**[Tester]** ✅ APPROVED - Tester. All tests passing.
 ```
 
 ## Features
@@ -161,7 +165,7 @@ your-project/
 ├── CLAUDE.md                    # Project context (automatasaurus block merged in)
 ├── .automatasaurus/             # Framework files (managed by installer)
 │   ├── README.md                # Framework documentation
-│   ├── agents/                  # AI persona agents
+│   ├── agents/                  # AI agents
 │   │   ├── architect/           # Design & required PR reviews
 │   │   ├── developer/           # Implementation & PRs
 │   │   ├── designer/            # UI/UX design specs
@@ -170,17 +174,9 @@ your-project/
 │   │   ├── workflow-orchestration/
 │   │   ├── github-workflow/
 │   │   ├── github-issues/
-│   │   ├── requirements-gathering/
-│   │   ├── user-stories/
-│   │   ├── pr-writing/
-│   │   ├── code-review/
-│   │   ├── agent-coordination/
-│   │   ├── project-commands/
-│   │   ├── notifications/
 │   │   ├── python-standards/
 │   │   ├── javascript-standards/
-│   │   ├── infrastructure-standards/
-│   │   └── css-standards/
+│   │   ⋮                        # (additional skills)
 │   ├── hooks/                   # Shell scripts for notifications
 │   │   ├── notify.sh
 │   │   ├── on-stop.sh
@@ -257,6 +253,7 @@ The primary way to invoke workflows:
 | Command | Description |
 |---------|-------------|
 | `/discovery [feature]` | Start discovery to understand requirements and create plan |
+| `/work-plan` | Analyze open issues, create sequenced implementation plan |
 | `/work-all` | Work through all open issues autonomously |
 | `/work [issue#]` | Work on a specific issue |
 
@@ -266,12 +263,26 @@ The primary way to invoke workflows:
 /discovery user authentication system
 ```
 
-The Product Manager will:
-- Lead a discovery conversation about goals, constraints, and requirements
-- Bring in specialists (Architect, Product Owner, UI/UX) as topics arise
-- Work with Product Owner to create well-formed GitHub issues
+The discovery command will:
+- Lead a conversation about goals, constraints, and requirements
+- Bring in specialists (Architect, Designer) for review
+- Create well-formed GitHub issues with acceptance criteria
 - Organize issues into milestones
 - Get your approval before any implementation
+
+### `/work-plan` - Implementation Planning
+
+```
+/work-plan
+```
+
+Before starting autonomous work, run this command to:
+- Analyze all open issues and their dependencies
+- Create a sequenced implementation plan
+- Generate `implementation-plan.md` with work order and rationale
+- Identify blockers and risks
+
+This step helps you review and approve the execution order before `/work-all` begins.
 
 ### `/work-all` - Autonomous Loop
 
@@ -279,11 +290,17 @@ The Product Manager will:
 /work-all
 ```
 
-The PM will:
+The orchestrator will:
 - List all remaining issues
 - Select next issue based on dependencies and priority
-- Coordinate the full workflow (Developer → Reviews → Tester → Merge)
-- Continue until all issues complete or blocked on human input
+- Spawn `/work {n}` as a subagent for context isolation
+- Merge successful PRs
+- Continue until all issues complete or circuit breaker limits reached
+
+**Circuit Breaker Limits** (configurable in `.claude/settings.json`):
+- `maxIssuesPerRun`: 20 - Stop after this many issues
+- `maxEscalationsBeforeStop`: 3 - Stop if stuck too many times
+- `maxConsecutiveFailures`: 3 - Stop if failing repeatedly
 
 ### `/work` - Single Issue
 
@@ -291,10 +308,13 @@ The PM will:
 /work 42
 ```
 
-Works on just issue #42:
+Work on a specific issue - useful for one-off tickets or addressing a particular issue outside the full autonomous loop:
 - Checks dependencies are satisfied
-- Routes through the full workflow
-- Stops after that issue is merged
+- Gets design specs if UI work is involved
+- Developer implements and opens PR
+- Coordinates reviews (Architect required, Designer if UI)
+- Tester verifies
+- Stops after that issue is complete (does not auto-merge)
 
 ### Invoking Specific Agents
 
@@ -386,6 +406,25 @@ The `.mcp.json` file configures Playwright for browser testing:
 }
 ```
 
+### Circuit Breaker Limits
+
+Configure limits in `.claude/settings.json` under `automatasaurus.limits`:
+
+```json
+{
+  "automatasaurus": {
+    "limits": {
+      "maxIssuesPerRun": 20,
+      "maxEscalationsBeforeStop": 3,
+      "maxRetriesPerIssue": 5,
+      "maxConsecutiveFailures": 3
+    }
+  }
+}
+```
+
+Custom limits survive framework updates (deep merge preserves your values).
+
 ### Notifications
 
 Configure notification behavior via environment variables:
@@ -410,13 +449,13 @@ The developer agent loads language-specific skills on demand:
 
 ## Customization
 
-### Adding a New Persona
+### Adding a New Agent
 
-1. Create `.claude/agents/<persona-name>/AGENT.md`
+1. Create `.claude/agents/<agent-name>/AGENT.md`
 2. Define the frontmatter:
    ```yaml
    ---
-   name: persona-name
+   name: agent-name
    description: When to use this agent
    tools: Read, Edit, Write, Bash, Grep, Glob
    model: sonnet
@@ -426,7 +465,7 @@ The developer agent loads language-specific skills on demand:
    - Responsibilities
    - When to use this agent
    - Comment format: `**[Agent Name]** comment text`
-4. Update `CLAUDE.md` with the new persona
+4. Update `CLAUDE.md` with the new agent
 
 ### Creating Skills
 
@@ -446,14 +485,14 @@ The developer agent loads language-specific skills on demand:
 - [x] CLI tool for easy installation (`automatasaurus init`)
 - [ ] Project detection and automatic command configuration
 - [ ] Additional MCP integrations (database, API testing)
-- [ ] Custom persona templates
+- [ ] Custom agent templates
 - [ ] Workflow visualization
 - [ ] Integration with CI/CD
 
 ## Contributing
 
 Contributions welcome:
-- New persona definitions
+- New agent definitions
 - Improved stop hook prompts
 - Additional skills and language standards
 - Workflow patterns

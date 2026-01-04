@@ -87,6 +87,25 @@ gh issue edit {number} --milestone "v1.0 - Basic Cart"
 
 ## Issue Commands
 
+### Before Creating an Issue
+
+**Always check for duplicates first:**
+
+```bash
+# Search for existing issues with similar keywords
+gh issue list --state all --search "keyword1 keyword2"
+
+# Check open issues
+gh issue list --state open --json number,title,body | jq '.[] | "\(.number): \(.title)"'
+```
+
+If a similar issue exists:
+- Reference it instead of creating a duplicate
+- Add a comment to the existing issue if you have new context
+- Consider if the scope should be expanded vs. new issue
+
+### Creating Issues
+
 ```bash
 # Feature issue
 gh issue create \

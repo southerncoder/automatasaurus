@@ -15,106 +15,27 @@ AUTO_MERGE: false
 
 ## Instructions
 
-You are now the **Implementation Orchestrator** for a single issue.
+Load and follow the `work-issue` skill with ISSUE_NUMBER = $ARGUMENTS.
 
-When delegating to agents, always include:
-> "This is SINGLE-ISSUE mode. Do NOT auto-merge. Notify when PR is approved."
+### 1. Load the Skill
 
----
+Load the `work-issue` skill which contains the full implementation workflow.
 
-## Your Process
+### 2. Execute the Workflow
 
-### 1. Get Issue Details
+Follow the work-issue skill steps:
+1. Get issue details for issue #$ARGUMENTS
+2. Check dependencies
+3. Get design specs if UI work
+4. Implement via developer agent
+5. Coordinate reviews (Architect, Designer if UI, Tester)
+6. Handle any change requests
 
-```bash
-gh issue view $ARGUMENTS
-```
+### 3. Report Result (Do NOT Merge)
 
-### 2. Check Dependencies
-
-Parse "Depends on #X" from issue body. Verify all dependencies are CLOSED.
-
-```bash
-# Extract dependencies
-gh issue view $ARGUMENTS --json body --jq '.body' | grep -oE 'Depends on #[0-9]+' | grep -oE '[0-9]+'
-
-# Check if each is closed
-gh issue view {dep_number} --json state --jq '.state'
-```
-
-If blocked, report and stop.
-
-### 3. Check for Design Specs
-
-If issue involves UI work, check for designer specs in comments. If none exist:
-
-```
-Use the designer agent to add UI/UX specifications to issue #$ARGUMENTS.
-```
-
-### 4. Delegate to Developer
-
-```
-Use the developer agent to implement issue #$ARGUMENTS.
-
-Context:
-- Issue: [title]
-- Acceptance criteria: [from issue body]
-- Design specs: [if applicable]
-
-This is SINGLE-ISSUE mode. Create PR when implementation is complete.
-```
-
-Wait for Developer to create PR.
-
-### 5. Coordinate Reviews
-
-Once PR is created, request reviews:
-
-**Architect Review (Required):**
-```
-Use the architect agent to review PR #[pr_number] for technical quality.
-Post standardized approval comment when done.
-```
-
-**Designer Review (If UI changes):**
-```
-Use the designer agent to review PR #[pr_number] for UI/UX quality.
-Post standardized approval comment when done.
-```
-
-**Tester Review (Required):**
-```
-Use the tester agent to verify PR #[pr_number].
-Run tests and perform manual verification if needed.
-Post standardized approval comment when done.
-```
-
-### 6. Handle Change Requests
-
-If any reviewer posts `❌ CHANGES REQUESTED`:
-
-```
-Use the developer agent to address the review feedback on PR #[pr_number].
-Feedback: [summary of requested changes]
-```
-
-Then re-request the relevant review.
-
-### 7. Verify PR Done Criteria
-
-Check PR comments for all required approvals:
-
-- [ ] `✅ APPROVED - Architect`
-- [ ] `✅ APPROVED - Designer` (if UI changes)
-- [ ] `✅ APPROVED - Tester`
-
-Verify no outstanding `❌ CHANGES REQUESTED`.
-
-### 8. Notify User (DO NOT MERGE)
+When the skill workflow completes with SUCCESS:
 
 ```bash
-# Post verification comment
 gh pr comment {pr_number} --body "**[Orchestration]**
 
 All required reviews complete:
@@ -134,19 +55,19 @@ All approvals received:
 - ✅ Architect
 - ✅ Tester
 
-Link: [pr_url]
+Link: {pr_url}
 
 When you're ready, merge the PR to complete issue #$ARGUMENTS.
 ```
 
-**STOP HERE** - Do NOT merge in single-issue mode.
+**STOP HERE** - Do NOT merge in single-issue mode. The user will merge manually.
 
 ---
 
-## Issue to Work On
+## Issue Number
 
-Issue number: $ARGUMENTS
+$ARGUMENTS
 
 ---
 
-Begin by fetching the issue details and checking dependencies.
+Begin by loading the work-issue skill, then start with Step 1: Get Issue Details.

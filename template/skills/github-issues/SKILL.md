@@ -106,17 +106,19 @@ If a similar issue exists:
 
 ### Creating Issues
 
+**Don't prefix titles with type** (e.g., "Feature:", "Bug:") - labels handle that and are more functional for filtering.
+
 ```bash
 # Feature issue
 gh issue create \
-  --title "Feature: {capability}" \
+  --title "{Concise description of capability}" \
   --label "feature" --label "ready" \
   --milestone "v1.0" \
   --body "..."
 
 # Bug issue
 gh issue create \
-  --title "Bug: {what's broken}" \
+  --title "{What's broken}" \
   --label "bug" --label "ready" \
   --body "..."
 

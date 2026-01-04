@@ -255,10 +255,11 @@ Each issue should:
 - Have clear acceptance criteria
 - Document dependencies
 - Be sized for a single PR
+- **No type prefix in title** (e.g., "Feature:", "Bug:") - use labels instead
 
 ```bash
 gh issue create \
-  --title "Feature: [Title]" \
+  --title "[Concise description]" \
   --milestone "[Milestone Name]" \
   --label "feature" \
   --label "ready" \

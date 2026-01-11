@@ -3,7 +3,6 @@ import { join } from 'node:path';
 import { getTemplateDir, getProjectPaths, getVersion, SUBDIR_SYMLINK_DIRS, FILE_SYMLINK_DIRS } from '../lib/paths.js';
 import { symlinkDirectory, symlinkSubdirectories } from '../lib/symlinks.js';
 import { mergeBlockIntoFile } from '../lib/block-merge.js';
-import { mergeLayeredSettings, createLocalSettingsTemplate } from '../lib/json-merge.js';
 import { readManifest, writeManifest, createManifest, updateManifest } from '../lib/manifest.js';
 
 export async function init({ force = false } = {}) {
@@ -26,8 +25,8 @@ export async function init({ force = false } = {}) {
   console.log('Copying framework files to .automatasaurus/...');
   await mkdir(paths.automatasaurus, { recursive: true });
 
-  const allDirs = [...SUBDIR_SYMLINK_DIRS, ...FILE_SYMLINK_DIRS];
-  for (const dir of allDirs) {
+  const copyDirs = ['agents', 'skills', 'commands', 'hooks', 'artifacts'];
+  for (const dir of copyDirs) {
     const sourceDir = join(templateDir, dir);
     const targetDir = join(paths.automatasaurus, dir);
     try {
@@ -39,21 +38,23 @@ export async function init({ force = false } = {}) {
     }
   }
 
-  // 2. Create .claude directory
-  await mkdir(paths.claude, { recursive: true });
+  // 2. Create .github directory structure
+  await mkdir(paths.github, { recursive: true });
+  await mkdir(paths.githubAgents, { recursive: true });
+  await mkdir(paths.githubSkills, { recursive: true });
 
-  // 3. Create symlinks from .claude to .automatasaurus
-  console.log('\nCreating symlinks in .claude/...');
+  // 3. Create symlinks from .github to .automatasaurus
+  console.log('\nCreating symlinks in .github/...');
   const allSymlinks = [];
 
-  // Subdirectory-level symlinks (agents, skills)
+  // Subdirectory-level symlinks (skills)
   for (const dir of SUBDIR_SYMLINK_DIRS) {
     const sourceDir = join(paths.automatasaurus, dir);
-    const targetDir = join(paths.claude, dir);
+    const targetDir = paths.githubSkills;
     try {
       const created = await symlinkSubdirectories(sourceDir, targetDir);
       for (const subdir of created) {
-        const symlinkPath = `${dir}/${subdir}`;
+        const symlinkPath = `.github/skills/${subdir}`;
         allSymlinks.push(symlinkPath);
         console.log(`  Linked ${symlinkPath}/`);
       }
@@ -62,14 +63,14 @@ export async function init({ force = false } = {}) {
     }
   }
 
-  // File-level symlinks (hooks, commands)
+  // File-level symlinks (agents)
   for (const dir of FILE_SYMLINK_DIRS) {
     const sourceDir = join(paths.automatasaurus, dir);
-    const targetDir = join(paths.claude, dir);
+    const targetDir = paths.githubAgents;
     try {
       const created = await symlinkDirectory(sourceDir, targetDir);
       for (const file of created) {
-        const symlinkPath = `${dir}/${file}`;
+        const symlinkPath = `.github/agents/${file}`;
         allSymlinks.push(symlinkPath);
         console.log(`  Linked ${symlinkPath}`);
       }
@@ -78,60 +79,36 @@ export async function init({ force = false } = {}) {
     }
   }
 
-  // 4. Block-merge CLAUDE.md
-  console.log('\nMerging CLAUDE.md...');
-  const claudeMdTemplate = join(templateDir, 'CLAUDE.block.md');
+  // 4. Block-merge .github/copilot-instructions.md
+  console.log('\nMerging copilot instructions...');
+  const instructionsTemplate = join(templateDir, 'copilot-instructions.block.md');
   try {
-    const blockContent = await readFile(claudeMdTemplate, 'utf-8');
-    const result = await mergeBlockIntoFile(paths.claudeMd, 'CORE', blockContent);
-    console.log(`  ${result.created ? 'Created' : 'Updated'} CLAUDE.md`);
+    const blockContent = await readFile(instructionsTemplate, 'utf-8');
+    const result = await mergeBlockIntoFile(paths.copilotInstructions, 'CORE', blockContent);
+    console.log(`  ${result.created ? 'Created' : 'Updated'} .github/copilot-instructions.md`);
   } catch (error) {
     if (error.code !== 'ENOENT') throw error;
-    console.log('  No CLAUDE.md template found, skipping');
+    console.log('  No copilot instructions template found, skipping');
   }
 
-  // 5. Merge settings.json with layered config support
-  console.log('\nMerging settings...');
-  const settingsTemplate = join(templateDir, 'settings.json');
-  try {
-    const settingsContent = await readFile(settingsTemplate, 'utf-8');
-    const frameworkSettings = JSON.parse(settingsContent);
-
-    // Create settings.local.json template if it doesn't exist
-    const localCreated = await createLocalSettingsTemplate(paths.settingsLocal);
-    if (localCreated) {
-      console.log('  Created settings.local.json (for your customizations)');
-    }
-
-    // Merge: framework defaults + user overrides -> settings.json
-    const result = await mergeLayeredSettings(paths.settings, paths.settingsLocal, frameworkSettings);
-    console.log(`  ${result.created ? 'Created' : 'Updated'} settings.json`);
-    if (result.hasLocalOverrides) {
-      console.log('  Applied overrides from settings.local.json');
-    }
-  } catch (error) {
-    if (error.code !== 'ENOENT') throw error;
-    console.log('  No settings template found, skipping');
-  }
-
-  // 6. Block-merge commands.md
-  console.log('\nMerging commands.md...');
-  const commandsTemplate = join(templateDir, 'commands.block.md');
+  // 5. Block-merge .github/automatasaurus-commands.md
+  console.log('\nMerging project commands...');
+  const commandsTemplate = join(templateDir, 'automatasaurus-commands.block.md');
   try {
     const blockContent = await readFile(commandsTemplate, 'utf-8');
-    const result = await mergeBlockIntoFile(paths.commands, 'COMMANDS', blockContent);
-    console.log(`  ${result.created ? 'Created' : 'Updated'} commands.md`);
+    const result = await mergeBlockIntoFile(paths.projectCommands, 'COMMANDS', blockContent);
+    console.log(`  ${result.created ? 'Created' : 'Updated'} .github/automatasaurus-commands.md`);
   } catch (error) {
     if (error.code !== 'ENOENT') throw error;
-    console.log('  No commands.md template found, skipping');
+    console.log('  No project commands template found, skipping');
   }
 
-  // 7. Write manifest
+  // 6. Write manifest
   const manifest = createManifest(version);
   manifest.symlinks = allSymlinks;
   manifest.merged_blocks = [
-    { file: 'CLAUDE.md', block: 'CORE' },
-    { file: '.claude/commands.md', block: 'COMMANDS' },
+    { file: '.github/copilot-instructions.md', block: 'CORE' },
+    { file: '.github/automatasaurus-commands.md', block: 'COMMANDS' },
   ];
   await writeManifest(projectRoot, manifest);
   console.log('\nWrote manifest file.');
@@ -140,9 +117,10 @@ export async function init({ force = false } = {}) {
 Automatasaurus initialized successfully!
 
 Next steps:
-  1. Review CLAUDE.md for framework documentation
-  2. Update .claude/commands.md with your project-specific commands
-  3. Start using /discovery, /work, or /work-all commands
+  1. Review .github/copilot-instructions.md
+  2. Update .github/automatasaurus-commands.md with your project-specific commands
+  3. Install GitHub Copilot CLI and authenticate
+  4. Run: npx automatasaurus discovery "your feature request"
 
 Run "automatasaurus status" to see installation details.
 `);

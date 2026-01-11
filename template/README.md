@@ -1,6 +1,6 @@
 # Automatasaurus Framework Files
 
-This folder contains the Automatasaurus framework - an automated software development workflow powered by Claude Code.
+This folder contains the Automatasaurus framework - an automated software development workflow powered by GitHub Copilot CLI.
 
 **Do not edit files in this folder directly.** They are managed by the installer and will be overwritten on updates.
 
@@ -11,11 +11,11 @@ This folder contains the Automatasaurus framework - an automated software develo
 | `agents/` | Specialized AI personas (Developer, Architect, Tester, etc.) |
 | `skills/` | Knowledge modules (coding standards, workflows, etc.) |
 | `hooks/` | Shell scripts for notifications and workflow control |
-| `commands/` | Slash commands (`/discovery`, `/work`, `/work-all`) |
+| `commands/` | Prompt templates used by the Automatasaurus CLI (discovery/planning) |
 
 ## How It Works
 
-Files in `.claude/` are symlinked to this folder. When you run:
+Files in `.github/` (agents/skills) are symlinked to this folder. When you run:
 
 ```bash
 npx automatasaurus update
@@ -26,8 +26,8 @@ This folder gets updated and symlinks are refreshed.
 ## Customization
 
 - **Add your own agents/skills**: Create files directly in `.claude/agents/` or `.claude/skills/` (not symlinks)
-- **Project commands**: Edit `.claude/commands.md` outside the marked block
-- **Settings**: Add to `.claude/settings.json` - your additions are preserved on update
+- **Add your own agents/skills**: Create files directly in `.github/agents/` or `.github/skills/` (not symlinks)
+- **Project commands**: Edit `.github/automatasaurus-commands.md` outside the marked block
 
 ## Learn More
 

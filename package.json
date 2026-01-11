@@ -1,7 +1,7 @@
 {
   "name": "automatasaurus",
   "version": "0.1.1",
-  "description": "Automated software development workflow powered by Claude Code",
+  "description": "Automated software development workflow powered by GitHub Copilot CLI",
   "type": "module",
   "bin": {
     "automatasaurus": "./bin/cli.js"
@@ -16,8 +16,8 @@
     "test": "node --test src/**/*.test.js"
   },
   "keywords": [
-    "claude",
-    "claude-code",
+    "copilot",
+    "copilot-cli",
     "automation",
     "ai",
     "development"

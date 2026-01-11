@@ -54,28 +54,9 @@ Build a dependency graph:
 
 ## Phase 3: Design Language & Style Guide
 
-Before implementation begins, spawn the Designer agent to establish the visual foundation:
+Before implementation begins, establish the visual foundation.
 
-```
-Use the Task tool with:
-  subagent_type: "general-purpose"
-  model: "sonnet"
-  description: "Create design language"
-  prompt: |
-    You are the Designer agent. Load your role from .claude/agents/designer/AGENT.md
-
-    **[Designer]**
-
-    Establish the design language and style guide for this project.
-
-    1. Check for existing design documentation:
-       - Look for `design-system.md`, `DESIGN.md`, `style-guide.md`, or similar
-       - Check for design tokens in the codebase (CSS variables, theme files)
-       - Look in `/docs`, `/design`, or project root
-    2. Review the open issues to understand the scope and UI needs
-    3. Analyze the existing codebase for current patterns and styling
-    4. If design docs exist: review and extend them as needed
-       If no design docs exist: create `design-system.md` with:
+If this project has any UI work, create or update `design-system.md` with:
 
     ## Color Palette
     - Primary colors (brand identity, CTAs)
@@ -115,9 +96,7 @@ Use the Task tool with:
     The goal is an intuitive, polished user experience with appealing colors
     that work harmoniously together. The design should feel modern and cohesive.
 
-    Output: Write the design system to `design-system.md` (or update existing).
-    Return the path to the design document when complete.
-```
+Output: Write the design system to `design-system.md` (or update existing).
 
 The design system lives in its own file, separate from the implementation plan.
 
@@ -238,6 +217,8 @@ I've analyzed [N] open issues and created an implementation plan.
 The full plan is in `implementation-plan.md`.
 
 Ready to start with `/work-all`?
+
+(If using Automatasaurus Copilot CLI wrappers, run: `npx automatasaurus work-all --merge`.)
 ```
 
 ---

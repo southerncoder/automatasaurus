@@ -195,23 +195,12 @@ Once requirements are understood, create `discovery.md` in the project:
 
 ## Phase 3: Agent Reviews
 
-After creating discovery.md, get feedback from specialist agents:
+After creating discovery.md, do a specialist pass:
 
-### Architect Review
-```
-Use the architect agent to review this discovery plan for technical feasibility.
-Focus on: architecture fit, scalability, security implications, technology choices.
-The discovery plan is at: [path to discovery.md]
-```
+- **Architecture pass**: feasibility, security, scalability, tech choices.
+- **Design pass** (if UI relevant): flows, accessibility, responsive needs.
 
-### Designer Review
-```
-Use the designer agent to review this discovery plan for UI/UX considerations.
-Focus on: user flows, accessibility, responsive design, missing UI requirements.
-The discovery plan is at: [path to discovery.md]
-```
-
-Present the feedback to the user. Refine the discovery document based on feedback.
+Summarize findings for the user and refine discovery.md accordingly.
 
 ---
 
@@ -299,14 +288,14 @@ EOF
 
 When you're ready to start development, run:
 
-/work-plan
+`npx automatasaurus work-plan`
 
 This will analyze the issues, determine the optimal work order based on dependencies, and create a prioritized implementation plan.
 
 View your milestones and issues at: [GitHub milestone URL]
 ```
 
-**IMPORTANT**: Always recommend `/work-plan` as the primary next step - it helps the user understand the work ahead before diving in.
+**IMPORTANT**: Always recommend `npx automatasaurus work-plan` as the primary next step - it helps the user understand the work ahead before diving in.
 
 ---
 

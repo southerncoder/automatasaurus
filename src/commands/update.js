@@ -3,7 +3,6 @@ import { join } from 'node:path';
 import { getTemplateDir, getProjectPaths, getVersion, SUBDIR_SYMLINK_DIRS, FILE_SYMLINK_DIRS } from '../lib/paths.js';
 import { symlinkDirectory, symlinkSubdirectories } from '../lib/symlinks.js';
 import { mergeBlockIntoFile } from '../lib/block-merge.js';
-import { mergeLayeredSettings, createLocalSettingsTemplate } from '../lib/json-merge.js';
 import { readManifest, writeManifest, updateManifest } from '../lib/manifest.js';
 
 export async function update({ force = false } = {}) {
@@ -30,8 +29,8 @@ export async function update({ force = false } = {}) {
   // 1. Update .automatasaurus directory
   console.log('Updating framework files in .automatasaurus/...');
 
-  const allDirs = [...SUBDIR_SYMLINK_DIRS, ...FILE_SYMLINK_DIRS];
-  for (const dir of allDirs) {
+  const copyDirs = ['agents', 'skills', 'commands', 'hooks', 'artifacts'];
+  for (const dir of copyDirs) {
     const sourceDir = join(templateDir, dir);
     const targetDir = join(paths.automatasaurus, dir);
     try {
@@ -43,17 +42,22 @@ export async function update({ force = false } = {}) {
   }
 
   // 2. Recreate symlinks (in case new items were added)
-  console.log('\nUpdating symlinks in .claude/...');
+  console.log('\nUpdating symlinks in .github/...');
   const allSymlinks = [];
 
-  // Subdirectory-level symlinks (agents, skills)
+  // Ensure .github dirs exist
+  await mkdir(paths.github, { recursive: true });
+  await mkdir(paths.githubAgents, { recursive: true });
+  await mkdir(paths.githubSkills, { recursive: true });
+
+  // Subdirectory-level symlinks (skills)
   for (const dir of SUBDIR_SYMLINK_DIRS) {
     const sourceDir = join(paths.automatasaurus, dir);
-    const targetDir = join(paths.claude, dir);
+    const targetDir = paths.githubSkills;
     try {
       const created = await symlinkSubdirectories(sourceDir, targetDir);
       for (const subdir of created) {
-        allSymlinks.push(`${dir}/${subdir}`);
+        allSymlinks.push(`.github/skills/${subdir}`);
       }
       console.log(`  Updated ${dir}/ (${created.length} subdirs)`);
     } catch (error) {
@@ -61,14 +65,14 @@ export async function update({ force = false } = {}) {
     }
   }
 
-  // File-level symlinks (hooks, commands)
+  // File-level symlinks (agents)
   for (const dir of FILE_SYMLINK_DIRS) {
     const sourceDir = join(paths.automatasaurus, dir);
-    const targetDir = join(paths.claude, dir);
+    const targetDir = paths.githubAgents;
     try {
       const created = await symlinkDirectory(sourceDir, targetDir);
       for (const file of created) {
-        allSymlinks.push(`${dir}/${file}`);
+        allSymlinks.push(`.github/agents/${file}`);
       }
       console.log(`  Updated ${dir}/ (${created.length} files)`);
     } catch (error) {
@@ -79,44 +83,22 @@ export async function update({ force = false } = {}) {
   // 3. Update block-merged files
   console.log('\nUpdating merged files...');
 
-  // CLAUDE.md
-  const claudeMdTemplate = join(templateDir, 'CLAUDE.block.md');
+  // .github/copilot-instructions.md
+  const instructionsTemplate = join(templateDir, 'copilot-instructions.block.md');
   try {
-    const blockContent = await readFile(claudeMdTemplate, 'utf-8');
-    await mergeBlockIntoFile(paths.claudeMd, 'CORE', blockContent);
-    console.log('  Updated CLAUDE.md');
+    const blockContent = await readFile(instructionsTemplate, 'utf-8');
+    await mergeBlockIntoFile(paths.copilotInstructions, 'CORE', blockContent);
+    console.log('  Updated .github/copilot-instructions.md');
   } catch (error) {
     if (error.code !== 'ENOENT') throw error;
   }
 
-  // settings.json with layered config support
-  const settingsTemplate = join(templateDir, 'settings.json');
-  try {
-    const settingsContent = await readFile(settingsTemplate, 'utf-8');
-    const frameworkSettings = JSON.parse(settingsContent);
-
-    // Ensure settings.local.json exists (for users upgrading from older versions)
-    const localCreated = await createLocalSettingsTemplate(paths.settingsLocal);
-    if (localCreated) {
-      console.log('  Created settings.local.json (for your customizations)');
-    }
-
-    // Merge: framework defaults + user overrides -> settings.json
-    const result = await mergeLayeredSettings(paths.settings, paths.settingsLocal, frameworkSettings);
-    console.log('  Updated settings.json');
-    if (result.hasLocalOverrides) {
-      console.log('  Preserved overrides from settings.local.json');
-    }
-  } catch (error) {
-    if (error.code !== 'ENOENT') throw error;
-  }
-
-  // commands.md
-  const commandsTemplate = join(templateDir, 'commands.block.md');
+  // .github/automatasaurus-commands.md
+  const commandsTemplate = join(templateDir, 'automatasaurus-commands.block.md');
   try {
     const blockContent = await readFile(commandsTemplate, 'utf-8');
-    await mergeBlockIntoFile(paths.commands, 'COMMANDS', blockContent);
-    console.log('  Updated commands.md');
+    await mergeBlockIntoFile(paths.projectCommands, 'COMMANDS', blockContent);
+    console.log('  Updated .github/automatasaurus-commands.md');
   } catch (error) {
     if (error.code !== 'ENOENT') throw error;
   }

@@ -2,31 +2,28 @@
 
 <img src="logo.jpeg" alt="Automatasaurus Logo" width="200">
 
-An automated software development workflow powered by Claude Code. Uses specialized subagents, stop hooks, and skills to enable extended autonomous development sessions with multiple coordinated agents.
+An automated software development workflow powered by GitHub Copilot CLI. Uses specialized agents and skills to enable extended autonomous development sessions coordinated through GitHub issues and PRs.
 
 ## Quick Start
 
 Get automatasaurus running in your project in under a minute:
 
 ```bash
-# Prerequisites: Claude Code CLI and GitHub CLI must be installed
-# Install: https://claude.ai/code and https://cli.github.com/
+# Prerequisites: GitHub Copilot CLI and GitHub CLI must be installed
+# Install: https://docs.github.com/en/copilot/concepts/agents/about-copilot-cli and https://cli.github.com/
 
 # Initialize in your project
 cd your-project
 npx automatasaurus init
 
-# Start Claude Code
-claude
-
 # Begin discovery for a new feature
-/discovery user authentication system
+npx automatasaurus discovery "user authentication system"
 
 # Review and sequence the implementation plan
-/work-plan
+npx automatasaurus work-plan
 
-# Work through all issues autonomously
-/work-all
+# Work through issues (optionally auto-merge when ready)
+npx automatasaurus work-all --merge
 ```
 
 That's it! The framework installs agents, skills, hooks, and slash commands into your project. See [Prerequisites](#prerequisites) for detailed setup instructions.
@@ -44,7 +41,7 @@ The workflow operates in two phases:
 ### Phase 1: Discovery (Interactive)
 
 ```
-User: /discovery "feature description"
+User: `npx automatasaurus discovery "feature description"`
     ↓
 Discovery command facilitates conversation:
   - Goals and success metrics
@@ -62,17 +59,17 @@ Creates GitHub issues with:
   - Organized into milestones
     ↓
 User approves milestone/issue breakdown
-    ↓
-User: /work-plan (analyze dependencies, create sequence)
-    ↓
-User: /work-all
+  ↓
+User: `npx automatasaurus work-plan` (analyze dependencies, create sequence)
+  ↓
+User: `npx automatasaurus work-all --merge`
 ```
 
 ### Phase 2: Autonomous Loop (Command Orchestrated)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│ /work-all ORCHESTRATION LOOP                                        │
+│ WORK-ALL ORCHESTRATION LOOP                                         │
 │                                                                     │
 │ 1. Select next issue                                                │
 │    - Check dependencies (all deps closed?)                         │
@@ -114,7 +111,7 @@ User: /work-all
 | **Designer** | Sonnet | Experience | UI/UX specs, accessibility, design reviews (if UI changes) |
 | **Tester** | Sonnet | Quality | Test execution, Playwright verification, required PR reviews |
 
-**Note:** Commands (`/discovery`, `/work`, `/work-all`) handle orchestration. There is no separate PM agent.
+**Note:** Automatasaurus CLI commands (`discovery`, `work`, `work-all`) handle orchestration. There is no separate PM agent.
 
 ## Agent Comment Format
 
@@ -142,7 +139,7 @@ All agents prefix their comments with their identity:
 
 ## Prerequisites
 
-- [Claude Code CLI](https://claude.ai/code) installed and authenticated
+- [GitHub Copilot CLI](https://docs.github.com/en/copilot/concepts/agents/about-copilot-cli) installed and authenticated
 - [GitHub CLI](https://cli.github.com/) (`gh`) installed and authenticated
 - Node.js (for Playwright MCP and npm-based projects)
 
@@ -164,14 +161,19 @@ After running `npx automatasaurus init`, your project will have:
 
 ```
 your-project/
-├── CLAUDE.md                    # Project context (automatasaurus block merged in)
+├── .github/
+│   ├── copilot-instructions.md   # Repo instructions for Copilot CLI (automatasaurus block merged in)
+│   ├── automatasaurus-commands.md# Project commands (you edit this)
+│   ├── agents/                  # Custom Copilot agents (symlinked)
+│   └── skills/                  # Agent skills (symlinked)
 ├── .automatasaurus/             # Framework files (managed by installer)
 │   ├── README.md                # Framework documentation
 │   ├── agents/                  # AI agents
-│   │   ├── architect/           # Design & required PR reviews
-│   │   ├── developer/           # Implementation & PRs
-│   │   ├── designer/            # UI/UX design specs
-│   │   └── tester/              # QA, Playwright, merge authority
+│   │   ├── architect.agent.md
+│   │   ├── developer.agent.md
+│   │   ├── designer.agent.md
+│   │   ├── tester.agent.md
+│   │   └── product-owner.agent.md
 │   ├── skills/                  # Knowledge modules
 │   │   ├── workflow-orchestration/
 │   │   ├── github-workflow/
@@ -179,7 +181,7 @@ your-project/
 │   │   ├── python-standards/
 │   │   ├── javascript-standards/
 │   │   ⋮                        # (additional skills)
-│   ├── hooks/                   # Shell scripts for notifications
+│   ├── hooks/                   # Optional shell scripts for notifications
 │   │   ├── notify.sh
 │   │   ├── on-stop.sh
 │   │   └── request-attention.sh
@@ -188,16 +190,9 @@ your-project/
 │       ├── work.md
 │       ├── work-all.md
 │       └── work-plan.md
-└── .claude/
-    ├── settings.json            # Claude Code settings (automatasaurus hooks merged in)
-    ├── commands.md              # Project-specific commands (you edit this)
-    ├── agents/ → .automatasaurus/agents/     # Symlinks
-    ├── skills/ → .automatasaurus/skills/
-    ├── hooks/ → .automatasaurus/hooks/
-    └── commands/ → .automatasaurus/commands/
 ```
 
-**Note:** Files in `.automatasaurus/` are managed by the installer and updated via `npx automatasaurus update`. Add your own custom agents/skills directly to `.claude/` (not as symlinks).
+**Note:** Files in `.automatasaurus/` are managed by the installer and updated via `npx automatasaurus update`. Add your own custom agents/skills directly to `.github/` (not as symlinks).
 
 ## Installation
 
@@ -257,14 +252,14 @@ npx ~/src/automatasaurus update --force
 
 This will:
 1. Copy framework files to `.automatasaurus/` directory
-2. Create symlinks in `.claude/` pointing to framework files
-3. Merge automatasaurus config into `CLAUDE.md` and `.claude/settings.json`
-4. Set up slash commands, agents, skills, and hooks
+2. Create symlinks in `.github/` (agents + skills)
+3. Merge automatasaurus config into `.github/copilot-instructions.md`
+4. Create `.github/automatasaurus-commands.md` for your project-specific commands
 
 After initialization:
-1. Customize `.claude/commands.md` with your project's build/test commands
+1. Customize `.github/automatasaurus-commands.md` with your project's build/test commands
 2. Ensure GitHub CLI is authenticated: `gh auth status`
-3. Start Claude Code: `claude`
+3. Ensure Copilot CLI is authenticated
 
 ### CLI Commands
 
@@ -276,21 +271,23 @@ npx automatasaurus status    # Show installation info
 
 ## Usage
 
-### Slash Commands
+### CLI Commands
 
 The primary way to invoke workflows:
 
 | Command | Description |
 |---------|-------------|
-| `/discovery [feature]` | Start discovery to understand requirements and create plan |
-| `/work-plan` | Analyze open issues, create sequenced implementation plan |
-| `/work-all` | Work through all open issues autonomously |
-| `/work [issue#]` | Work on a specific issue |
+| `npx automatasaurus discovery "..."` | Start discovery to understand requirements and create plan |
+| `npx automatasaurus work-plan` | Analyze open issues, create sequenced implementation plan |
+| `npx automatasaurus work-all` | Work through open issues |
+| `npx automatasaurus work <issue#>` | Work on a specific issue |
 
-### `/discovery` - Discovery Mode
+### `automatasaurus discovery` - Discovery Mode
 
 ```
-/discovery user authentication system
+```bash
+npx automatasaurus discovery "user authentication system"
+```
 ```
 
 The discovery command will:
@@ -300,10 +297,12 @@ The discovery command will:
 - Organize issues into milestones
 - Get your approval before any implementation
 
-### `/work-plan` - Implementation Planning
+### `automatasaurus work-plan` - Implementation Planning
 
 ```
-/work-plan
+```bash
+npx automatasaurus work-plan
+```
 ```
 
 Before starting autonomous work, run this command to:
@@ -312,12 +311,14 @@ Before starting autonomous work, run this command to:
 - Generate `implementation-plan.md` with work order and rationale
 - Identify blockers and risks
 
-This step helps you review and approve the execution order before `/work-all` begins.
+This step helps you review and approve the execution order before `work-all` begins.
 
-### `/work-all` - Autonomous Loop
+### `automatasaurus work-all` - Autonomous Loop
 
 ```
-/work-all
+```bash
+npx automatasaurus work-all --merge
+```
 ```
 
 The orchestrator (aka Product Owner) will:
@@ -327,7 +328,7 @@ The orchestrator (aka Product Owner) will:
 - Merge successful PRs
 - Continue until all issues complete or circuit breaker limits reached
 
-**Circuit Breaker Limits** (configurable in `.claude/settings.json`):
+**Circuit Breaker Limits** (configurable via environment variables):
 - `maxIssuesPerRun`: 20 - Stop after this many issues
 - `maxEscalationsBeforeStop`: 3 - Stop if stuck too many times
 - `maxConsecutiveFailures`: 3 - Stop if failing repeatedly
@@ -408,7 +409,7 @@ Agents send desktop notifications when they need your attention:
 
 ### Project Commands
 
-Edit `.claude/commands.md` for your project's commands:
+Edit `.github/automatasaurus-commands.md` for your project's commands:
 
 ```markdown
 ## Quick Reference
@@ -438,7 +439,7 @@ The `.mcp.json` file configures Playwright for browser testing:
 
 ### Circuit Breaker Limits
 
-Customize limits in `.claude/settings.local.json` (your overrides, never touched by updates):
+Customize limits via environment variables (per machine):
 
 ```json
 {
@@ -450,7 +451,7 @@ Customize limits in `.claude/settings.local.json` (your overrides, never touched
 }
 ```
 
-Default values in `.claude/settings.json`:
+Default values:
 - `maxIssuesPerRun`: 20
 - `maxEscalationsBeforeStop`: 3
 - `maxRetriesPerIssue`: 5
@@ -484,25 +485,14 @@ The developer agent loads language-specific skills on demand:
 
 ### Adding a New Agent
 
-1. Create `.claude/agents/<agent-name>/AGENT.md`
-2. Define the frontmatter:
-   ```yaml
-   ---
-   name: agent-name
-   description: When to use this agent
-   tools: Read, Edit, Write, Bash, Grep, Glob
-   model: sonnet
-   ---
-   ```
-3. Write a detailed system prompt including:
-   - Responsibilities
-   - When to use this agent
-   - Comment format: `**[Agent Name]** comment text`
-4. Update `CLAUDE.md` with the new agent
+1. Create `.github/agents/<agent-name>.agent.md`
+2. Add YAML frontmatter with `name` and `description`
+3. Write a detailed prompt below the frontmatter
+4. Update `.github/copilot-instructions.md` if you want repo-wide conventions
 
 ### Creating Skills
 
-1. Create `.claude/skills/<skill-name>/SKILL.md`
+1. Create `.github/skills/<skill-name>/SKILL.md`
 2. Add frontmatter:
    ```yaml
    ---
@@ -541,10 +531,10 @@ This opens a browser for authentication (works with passkeys/security keys).
 
 ## References
 
-- [Claude Code Documentation](https://code.claude.com/docs)
-- [Subagents Reference](https://code.claude.com/docs/en/sub-agents)
-- [Hooks Reference](https://code.claude.com/docs/en/hooks)
-- [Skills Reference](https://code.claude.com/docs/en/skills)
+- [About GitHub Copilot CLI](https://docs.github.com/en/copilot/concepts/agents/about-copilot-cli)
+- [Using GitHub Copilot CLI](https://docs.github.com/en/copilot/how-tos/use-copilot-agents/use-copilot-cli)
+- [Creating custom agents](https://docs.github.com/en/copilot/how-tos/use-copilot-agents/coding-agent/create-custom-agents)
+- [About Agent Skills](https://docs.github.com/en/copilot/concepts/agents/about-agent-skills)
 - [Playwright MCP](https://github.com/microsoft/playwright-mcp)
 - [GitHub CLI](https://cli.github.com/)
 - [Best Practices](https://www.anthropic.com/engineering/claude-code-best-practices)

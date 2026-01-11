@@ -39,12 +39,12 @@ Merged blocks:   ${manifest.merged_blocks.length}
   let brokenCount = 0;
 
   for (const symlinkPath of manifest.symlinks.slice(0, 10)) {
-    const fullPath = join(paths.claude, symlinkPath);
+    const fullPath = join(projectRoot, symlinkPath);
     const linked = await isSymlink(fullPath);
     const status = linked ? 'OK' : 'BROKEN';
     if (!linked) brokenCount++;
-    // Add trailing slash for directory symlinks (agents, skills)
-    const isDir = SUBDIR_SYMLINK_DIRS.some(dir => symlinkPath.startsWith(`${dir}/`));
+    // Add trailing slash for directory symlinks (skills)
+    const isDir = SUBDIR_SYMLINK_DIRS.some(dir => symlinkPath.includes(`/${dir}/`) || symlinkPath.startsWith(`.github/${dir}/`));
     const displayPath = isDir ? `${symlinkPath}/` : symlinkPath;
     console.log(`  ${status.padEnd(6)} ${displayPath}`);
   }

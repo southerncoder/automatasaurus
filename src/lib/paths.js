@@ -33,12 +33,12 @@ export async function getVersion() {
 export function getProjectPaths(projectRoot) {
   return {
     automatasaurus: join(projectRoot, '.automatasaurus'),
-    claude: join(projectRoot, '.claude'),
-    claudeMd: join(projectRoot, 'CLAUDE.md'),
-    manifest: join(projectRoot, '.claude', '.automatasaurus.manifest.json'),
-    settings: join(projectRoot, '.claude', 'settings.json'),
-    settingsLocal: join(projectRoot, '.claude', 'settings.local.json'),
-    commands: join(projectRoot, '.claude', 'commands.md'),
+    github: join(projectRoot, '.github'),
+    githubAgents: join(projectRoot, '.github', 'agents'),
+    githubSkills: join(projectRoot, '.github', 'skills'),
+    copilotInstructions: join(projectRoot, '.github', 'copilot-instructions.md'),
+    projectCommands: join(projectRoot, '.github', 'automatasaurus-commands.md'),
+    manifest: join(projectRoot, '.automatasaurus', '.automatasaurus.manifest.json'),
   };
 }
 
@@ -46,10 +46,10 @@ export function getProjectPaths(projectRoot) {
  * Directories that get symlinked at subdirectory level (each subdir is a symlink)
  * Use for directories containing multiple independent modules (agents, skills)
  */
-export const SUBDIR_SYMLINK_DIRS = ['agents', 'skills'];
+export const SUBDIR_SYMLINK_DIRS = ['skills'];
 
 /**
  * Directories that get symlinked at file level (each file is a symlink)
  * Use for directories containing flat files (hooks, commands)
  */
-export const FILE_SYMLINK_DIRS = ['hooks', 'commands'];
+export const FILE_SYMLINK_DIRS = ['agents'];

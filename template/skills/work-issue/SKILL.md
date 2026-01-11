@@ -5,9 +5,7 @@ description: Core implementation logic for working on a single GitHub issue. Use
 
 # Work Issue Skill
 
-This skill contains the implementation logic for working on a single GitHub issue. It is loaded by:
-- `/work {n}` command (direct invocation)
-- `/work-all` subagents (spawned for context isolation)
+This skill contains the implementation logic for working on a single GitHub issue.
 
 ## Input
 
@@ -75,7 +73,7 @@ Use the Task tool with:
   model: "sonnet"
   description: "Designer specs for issue #{ISSUE_NUMBER}"
   prompt: |
-    You are the Designer agent. Load your role from .claude/agents/designer/AGENT.md
+    You are the Designer agent. Load your role from .github/agents/designer.agent.md
 
     **[Designer]**
 
@@ -103,7 +101,7 @@ Use the Task tool with:
   model: "sonnet"
   description: "Implement issue #{ISSUE_NUMBER}"
   prompt: |
-    You are the Developer agent. Load your role from .claude/agents/developer/AGENT.md
+    You are the Developer agent. Load your role from .github/agents/developer.agent.md
 
     **[Developer]**
 
@@ -142,7 +140,7 @@ Use the Task tool with:
   model: "sonnet"
   description: "Architect review PR #{pr_number}"
   prompt: |
-    You are the Architect agent. Load your role from .claude/agents/architect/AGENT.md
+    You are the Architect agent. Load your role from .github/agents/architect.agent.md
 
     **[Architect]**
 
@@ -163,7 +161,7 @@ Use the Task tool with:
   model: "sonnet"
   description: "Designer review PR #{pr_number}"
   prompt: |
-    You are the Designer agent. Load your role from .claude/agents/designer/AGENT.md
+    You are the Designer agent. Load your role from .github/agents/designer.agent.md
 
     **[Designer]**
 
@@ -185,7 +183,7 @@ Use the Task tool with:
   model: "sonnet"
   description: "Tester verify PR #{pr_number}"
   prompt: |
-    You are the Tester agent. Load your role from .claude/agents/tester/AGENT.md
+    You are the Tester agent. Load your role from .github/agents/tester.agent.md
 
     **[Tester]**
 
@@ -216,7 +214,7 @@ Use the Task tool with:
   model: "sonnet"
   description: "Address feedback PR #{pr_number}"
   prompt: |
-    You are the Developer agent. Load your role from .claude/agents/developer/AGENT.md
+    You are the Developer agent. Load your role from .github/agents/developer.agent.md
 
     **[Developer]**
 

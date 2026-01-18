@@ -206,8 +206,11 @@ Implement GitHub draft PRs, actions, and project management features.
 
 ```yaml
 # Example GitHub Action workflow
-donkey:
-  runs:
+name: CI
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
     steps:
       - name: Check out code
         uses: actions/checkout@v2

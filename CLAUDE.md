@@ -157,3 +157,4 @@ Hooks in `template/hooks/` execute on Claude Code events:
 - `request-attention.sh` - Explicit attention requests
 
 Hook configuration in `template/settings.json` defines triggers.
+\n\n## New Skill Docs\nAdditions:\n- .claude/skills/designer-guidance/SKILL.md - detailed designer templates and checklists\n- .claude/skills/tester-guidance/SKILL.md - detailed tester procedures and Playwright guidance\n- .claude/skills/workflow-orchestration/SKILL.md - orchestration templates and ADR/escalation examples\n

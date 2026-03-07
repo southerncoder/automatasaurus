@@ -15,10 +15,12 @@ Commands run in the main conversation and orchestrate agents:
 
 | Command | Purpose | Produces |
 |---------|---------|----------|
-| `/discovery` | Requirements gathering | `discovery.md`, issues |
-| `/work-plan` | Implementation planning | `implementation-plan.md` |
-| `/work {n}` | Single issue | PR (user merges) |
-| `/work-all` | All issues | PRs merged, issues closed |
+| `/auto-discovery` | Requirements gathering | `discovery.md` (or `discovery-{N}.md` on re-runs), issues |
+| `/auto-plan` | Implementation planning | `implementation-plan.md` (or `implementation-plan-{N}.md` on re-runs) |
+| `/auto-evolve` | Generate agent context | `PROJECT.md` files (fully regenerated each run) |
+| `/auto-clear` | Remove all generated planning files | Clean slate |
+| `/auto-work-issue {n}` | Single issue | PR (user merges) |
+| `/auto-work-all` | All issues | PRs merged, issues closed |
 
 ### Agents (Autonomous Workers)
 
@@ -39,10 +41,10 @@ The system operates in different modes:
 
 | Mode | Command | Merge Behavior |
 |------|---------|----------------|
-| `discovery` | `/discovery` | N/A - creates issues |
-| `planning` | `/work-plan` | N/A - creates plan |
-| `single-issue` | `/work {n}` | **Notify only** - user merges |
-| `all-issues` | `/work-all` | **Auto-merge** and continue |
+| `discovery` | `/auto-discovery` | N/A - creates issues |
+| `planning` | `/auto-plan` | N/A - creates plan |
+| `single-issue` | `/auto-work-issue {n}` | **Notify only** - user merges |
+| `all-issues` | `/auto-work-all` | **Auto-merge** and continue |
 
 ### Mode Context Passing
 
@@ -60,17 +62,44 @@ When delegating to agents, include mode context:
 
 ---
 
+## Coordination Modes
+
+The orchestrator can use two modes for delegating work to agents:
+
+| Mode | Mechanism | Communication | Best For |
+|------|-----------|---------------|----------|
+| **Subagents** (default) | Task tool spawns agent | Report to orchestrator only via briefing/report files | Independent tasks, linear workflows |
+| **Agent Teams** (experimental) | Team of concurrent sessions | Peer-to-peer messaging + shared task list | Multi-role reviews, real-time collaboration |
+
+### Decision Criteria
+
+| Workflow Step | Default | Team Alternative | When to Use Team |
+|--------------|---------|-----------------|-----------------|
+| Design specs | Subagent | N/A | Always subagent |
+| Implementation | Subagent | Developer + Designer team | UI work needing real-time designer feedback |
+| Reviews | Subagent (parallel) | Review team | Cross-pollination of findings adds value |
+| Feedback fixes | Subagent | N/A | Always subagent |
+
+Settings control defaults:
+- `teamPreferForReviews: true` — default to review teams
+- `teamPreferForImplementation: false` — default to solo developer subagent
+- `teamMaxTeammates: 4` — cap concurrent team members
+
+Teams are experimental. Always fall back to subagents if team creation fails.
+
+---
+
 ## Two-Phase Workflow
 
 ### Phase 1: Discovery (Interactive)
 
 ```
-User: /discovery "feature description"
+User: /auto-discovery "feature description"
            ↓
     Main conversation facilitates requirements gathering
     (loads requirements-gathering, user-stories skills)
            ↓
-    Produces discovery.md
+    Produces discovery.md (or discovery-{N}.md on re-runs)
            ↓
     Spawns Architect → reviews technical feasibility
     Spawns Designer → reviews UI/UX considerations
@@ -81,18 +110,23 @@ User: /discovery "feature description"
 ### Phase 2: Implementation (Autonomous)
 
 ```
-User: /work-plan (optional)
+User: /auto-plan (optional)
            ↓
-    Analyzes issues, creates implementation-plan.md
+    Analyzes issues, creates implementation-plan.md (or implementation-plan-{N}.md on re-runs)
            ↓
-User: /work-all
+User: /auto-work-all
            ↓
     LOOP for each issue:
+      - Setup orchestration folder
       - Check dependencies
-      - Spawn Developer → implements, creates PR
-      - Spawn Architect → reviews PR
-      - Spawn Designer → reviews PR (if UI)
-      - Spawn Tester → verifies PR
+      - Choose coordination mode (teams vs subagents per step)
+      - Spawn Designer → specs (if UI)
+      - Implementation:
+          Subagent path: Spawn Developer → implements, creates PR
+          Team path:     Developer + Designer team → real-time iteration, PR
+      - Reviews:
+          Subagent path: Spawn Architect, Designer, Tester in parallel
+          Team path:     Review team → coordinated findings
       - Check PR Done Criteria
       - Merge (if all-issues mode)
       - Continue to next
@@ -102,9 +136,76 @@ User: /work-all
 
 ---
 
+## Bidirectional Context Flow
+
+Sub-agents start with fresh context (no conversation history). The orchestration layer uses **briefings** and **reports** to communicate context and capture results.
+
+### Orchestration Folder Structure
+
+```
+orchestration/
+├── discovery/
+│   └── {date}-{feature-slug}/
+│       ├── BRIEFING-architect-review.md
+│       ├── REPORT-architect-review.md
+│       └── ...
+├── planning/
+│   └── {date}-{plan-name}/
+│       └── ...
+└── issues/
+    └── {issue-number}-{slug}/
+        ├── BRIEFING-design-specs.md
+        ├── REPORT-design-specs.md
+        ├── BRIEFING-implement.md
+        ├── REPORT-implement.md
+        ├── BRIEFING-architect-review.md
+        ├── REPORT-architect-review.md
+        ├── BRIEFING-designer-review.md
+        ├── REPORT-designer-review.md
+        ├── BRIEFING-test.md
+        └── REPORT-test.md
+```
+
+### How It Works
+
+**Parent agent** (orchestrating workflow):
+1. Creates briefing file in `orchestration/{type}/{id}/BRIEFING-{step}.md`
+2. Includes briefing path in Task prompt when spawning sub-agent
+3. After Task returns, reads `REPORT-{step}.md` from same folder
+4. Includes report summary in next agent's briefing
+
+**Sub-agent** (following AGENT.md protocol):
+1. Reads briefing file path from task prompt
+2. Reads briefing as first action
+3. Does work
+4. Writes report to `REPORT-{step}.md` in same folder before completing
+
+### Context Chain
+
+Each agent receives context about what previous agents did:
+
+```
+1. Designer creates specs → writes REPORT-design-specs.md
+2. Developer briefing includes designer's report summary
+3. Developer implements → writes REPORT-implement.md
+4. Reviewer briefings include developer's report summary
+5. ...and so on
+```
+
+This enables informed decisions throughout the workflow.
+
+### Benefits
+
+- **Audit trail**: Full history of agent communication per issue
+- **Debugging**: Can review what context each agent received
+- **No collisions**: Each spawn gets unique files
+- **Context chain**: Parent aggregates prior work into new briefings
+
+---
+
 ## PR Done Criteria
 
-Both `/work` and `/work-all` use these criteria to determine when a PR is ready:
+Both `/auto-work-issue` and `/auto-work-all` use these criteria to determine when a PR is ready:
 
 ### Required Approvals
 
@@ -135,9 +236,9 @@ Track issue progress:
 
 | Label | Description |
 |-------|-------------|
-| `ready` | No blocking dependencies |
+| `ready` | No blocking dependencies, can be worked |
 | `in-progress` | Currently being implemented |
-| `blocked` | Waiting on dependencies |
+| `blocked` | Waiting on dependencies or input |
 | `needs-review` | PR open, awaiting reviews |
 
 ### State Flow
@@ -243,8 +344,11 @@ The workflow produces these artifacts:
 
 | File | Command | Purpose |
 |------|---------|---------|
-| `discovery.md` | `/discovery` | Requirements, flows, architecture |
-| `implementation-plan.md` | `/work-plan` | Sequenced work order |
+| `discovery.md`, `discovery-{N}.md` | `/auto-discovery` | Requirements, flows, architecture (numbered on re-runs) |
+| `implementation-plan.md`, `implementation-plan-{N}.md` | `/auto-plan` | Sequenced work order (numbered on re-runs) |
+| `design-system.md` | `/auto-plan` | Design language (updated in place) |
+| `.claude/agents/*/PROJECT.md` | `/auto-evolve` | Role-specific context (fully regenerated each run) |
+| `orchestration/issues/*/` | `/auto-work-issue`, `/auto-work-all` | Briefings and reports per issue |
 
 ---
 

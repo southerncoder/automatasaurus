@@ -2,7 +2,7 @@
 
 <img src="logo.jpeg" alt="Automatasaurus Logo" width="200">
 
-An automated software development workflow powered by Claude Code. Uses specialized subagents, stop hooks, and skills to enable extended autonomous development sessions with multiple coordinated agents.
+An automated software development workflow powered by Claude Code. Uses specialized subagents, agent teams, stop hooks, and skills to enable extended autonomous development sessions with multiple coordinated agents.
 
 ## Quick Start
 
@@ -20,13 +20,16 @@ npx automatasaurus init
 claude
 
 # Begin discovery for a new feature
-/discovery user authentication system
+/auto-discovery user authentication system
 
 # Review and sequence the implementation plan
-/work-plan
+/auto-plan
+
+# Generate agent-specific context files
+/auto-evolve
 
 # Work through all issues autonomously
-/work-all
+/auto-work-all
 ```
 
 That's it! The framework installs agents, skills, hooks, and slash commands into your project. See [Prerequisites](#prerequisites) for detailed setup instructions.
@@ -44,7 +47,7 @@ The workflow operates in two phases:
 ### Phase 1: Discovery (Interactive)
 
 ```
-User: /discovery "feature description"
+User: /auto-discovery "feature description"
     ↓
 Discovery command facilitates conversation:
   - Goals and success metrics
@@ -63,43 +66,51 @@ Creates GitHub issues with:
     ↓
 User approves milestone/issue breakdown
     ↓
-User: /work-plan (analyze dependencies, create sequence)
+User: /auto-plan (analyze dependencies, create sequence)
     ↓
-User: /work-all
+User: /auto-evolve (generate agent-specific context)
+    ↓
+User: /auto-work-all
 ```
 
 ### Phase 2: Autonomous Loop (Command Orchestrated)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│ /work-all ORCHESTRATION LOOP                                        │
+│ /auto-work-all ORCHESTRATION LOOP                                   │
 │                                                                     │
 │ 1. Select next issue                                                │
 │    - Check dependencies (all deps closed?)                         │
 │    - Consider priority labels                                       │
 │    - Check circuit breaker limits                                  │
 │                                                                     │
-│ 2. Spawn /work {n} as subagent (context isolation)                 │
+│ 2. Setup orchestration folder                                       │
+│    - Create orchestration/issues/{issue-num}-{slug}/               │
+│    - All agent briefings and reports stored here                   │
+│                                                                     │
+│ 3. Spawn agents with briefings                                      │
 │    └→ Designer: Add specs if UI work needed                        │
+│       (reads BRIEFING-design-specs.md, writes REPORT)              │
 │                                                                     │
-│ 3. Developer: Implement                                             │
+│ 4. Developer: Implement                                             │
+│    - Reads BRIEFING-implement.md (includes prior agent activity)   │
 │    - Create branch: {issue-num}-{slug}                             │
-│    - Commit frequently at logical checkpoints                      │
 │    - If stuck (5 attempts) → Escalate to Architect                 │
-│    - If Architect stuck → Notify human, wait                       │
 │    - Open PR with "Closes #X"                                      │
+│    - Writes REPORT-implement.md                                    │
 │                                                                     │
-│ 4. Review Cycle                                                     │
-│    ├→ Architect: REQUIRED review                                   │
-│    ├→ Designer: Review if UI-relevant (can decline "N/A")          │
-│    └→ Developer: Address feedback, push fixes                      │
+│ 5. Review Cycle (parallel subagents OR review team)                  │
+│    ├→ Architect: REQUIRED review (reads/writes briefing/report)    │
+│    ├→ Designer: Review if UI-relevant                              │
+│    ├→ Developer: Address feedback, push fixes                      │
+│    └→ (Team mode: reviewers coordinate findings in real-time)      │
 │                                                                     │
-│ 5. Tester: Verification                                             │
+│ 6. Tester: Verification                                             │
+│    - Reads BRIEFING-test.md (includes all prior reports)           │
 │    - Run automated tests                                            │
-│    - Manual verification if needed (Playwright)                    │
-│    - If issues → Back to Developer                                 │
+│    - Writes REPORT-test.md                                         │
 │                                                                     │
-│ 6. Merge and continue                                               │
+│ 7. Merge and continue                                               │
 │    - Product Owner merges PR                                       │
 │    - Loop until complete or limits reached                         │
 └─────────────────────────────────────────────────────────────────────┘
@@ -110,11 +121,13 @@ User: /work-all
 | Agent | Model | Role | Responsibilities |
 |-------|-------|------|------------------|
 | **Architect** | Opus | Design | System design, ADRs, required PR reviews, stuck-issue analysis |
+| **Evolver** | Sonnet | Preparation | Synthesizes discovery/planning into agent-specific PROJECT.md files |
 | **Developer** | Sonnet | Implementation | Feature development, bug fixes, PRs, addresses feedback |
 | **Designer** | Sonnet | Experience | UI/UX specs, accessibility, design reviews (if UI changes) |
+| **Researcher** | Sonnet | Research | Deep codebase analysis, technology evaluation, structured reports |
 | **Tester** | Sonnet | Quality | Test execution, Playwright verification, required PR reviews |
 
-**Note:** Commands (`/discovery`, `/work`, `/work-all`) handle orchestration. There is no separate PM agent.
+**Note:** Commands (`/auto-discovery`, `/auto-work-issue`, `/auto-work-all`) handle orchestration. There is no separate PM agent.
 
 ## Agent Comment Format
 
@@ -122,14 +135,18 @@ All agents prefix their comments with their identity:
 
 ```markdown
 **[Product Owner]** Starting work on issue #5. Routing to Developer.
+**[Evolver]** Project context generated for all agents.
 **[Developer]** Fixed in commit abc1234. Ready for re-review.
 **[Architect]** ✅ APPROVED - Architect. Clean separation of concerns.
 **[Designer]** N/A - No UI changes in this PR.
+**[Researcher]** Research complete. Report written with findings and sources.
 **[Tester]** ✅ APPROVED - Tester. All tests passing.
 ```
 
 ## Features
 
+- **Bidirectional Context Flow**: Agents communicate through briefings and reports, creating an audit trail
+- **Agent Teams (Experimental)**: Multiple agents coordinate via shared task lists and peer-to-peer messaging for real-time collaboration
 - **Stop Hooks**: Intelligent evaluation ensures tasks are complete before stopping
 - **Subagent Coordination**: Specialized agents with role-specific completion criteria
 - **GitHub Integration**: All work coordinated through issues, PRs, and labels
@@ -139,6 +156,45 @@ All agents prefix their comments with their identity:
 - **Language Skills**: On-demand coding standards for Python, JavaScript, CSS
 - **Project Commands**: Configurable commands for any project stack
 - **Extended Sessions**: Designed for autonomous work over extended periods
+
+## Agent Context Flow
+
+Sub-agents start with fresh context (no conversation history). The orchestration layer uses **briefings** and **reports** to communicate context and capture results.
+
+### How It Works
+
+1. **Parent creates briefing** with task context, constraints, and prior agent activity
+2. **Sub-agent reads briefing** as its first action
+3. **Sub-agent does work** following the briefing instructions
+4. **Sub-agent writes report** before completing (what was done, decisions made, issues encountered)
+5. **Parent reads report** and includes summary in next agent's briefing
+
+This creates a **context chain** where each agent knows what previous agents did.
+
+### Orchestration Folder Structure
+
+All briefings and reports are stored per-issue:
+
+```
+orchestration/
+└── issues/
+    └── 42-user-authentication/
+        ├── BRIEFING-design-specs.md      # Context for Designer
+        ├── REPORT-design-specs.md        # Designer's output
+        ├── BRIEFING-implement.md         # Context for Developer
+        ├── REPORT-implement.md           # Developer's output
+        ├── BRIEFING-architect-review.md  # Context for Architect
+        ├── REPORT-architect-review.md    # Architect's findings
+        ├── BRIEFING-test.md              # Context for Tester
+        └── REPORT-test.md                # Tester's results
+```
+
+### Benefits
+
+- **Audit trail**: Full history of agent communication per issue
+- **Debugging**: Can review what context each agent received
+- **No collisions**: Each agent spawn gets unique files
+- **Informed decisions**: Reviewers see what Developer did, Tester sees all prior activity
 
 ## Prerequisites
 
@@ -165,29 +221,38 @@ After running `npx automatasaurus init`, your project will have:
 ```
 your-project/
 ├── CLAUDE.md                    # Project context (automatasaurus block merged in)
+├── orchestration/               # Agent communication (created during /work)
+│   └── issues/                  # Per-issue briefings and reports
+│       └── 42-user-auth/
+│           ├── BRIEFING-*.md    # Context files for each agent
+│           └── REPORT-*.md      # Output files from each agent
 ├── .automatasaurus/             # Framework files (managed by installer)
 │   ├── README.md                # Framework documentation
 │   ├── agents/                  # AI agents
 │   │   ├── architect/           # Design & required PR reviews
+│   │   ├── evolver/             # Agent context generation
 │   │   ├── developer/           # Implementation & PRs
 │   │   ├── designer/            # UI/UX design specs
+│   │   ├── researcher/          # Deep research and investigation
 │   │   └── tester/              # QA, Playwright, merge authority
 │   ├── skills/                  # Knowledge modules
 │   │   ├── workflow-orchestration/
+│   │   ├── agent-coordination/
+│   │   ├── work-issue/
 │   │   ├── github-workflow/
-│   │   ├── github-issues/
 │   │   ├── python-standards/
-│   │   ├── javascript-standards/
 │   │   ⋮                        # (additional skills)
 │   ├── hooks/                   # Shell scripts for notifications
 │   │   ├── notify.sh
 │   │   ├── on-stop.sh
 │   │   └── request-attention.sh
 │   └── commands/                # Slash command definitions
-│       ├── discovery.md
-│       ├── work.md
-│       ├── work-all.md
-│       └── work-plan.md
+│       ├── auto-discovery.md
+│       ├── auto-evolve.md
+│       ├── auto-plan.md
+│       ├── auto-work-all.md
+│       ├── auto-work-issue.md
+│       └── auto-work-milestone.md
 └── .claude/
     ├── settings.json            # Claude Code settings (automatasaurus hooks merged in)
     ├── commands.md              # Project-specific commands (you edit this)
@@ -197,7 +262,7 @@ your-project/
     └── commands/ → .automatasaurus/commands/
 ```
 
-**Note:** Files in `.automatasaurus/` are managed by the installer and updated via `npx automatasaurus update`. Add your own custom agents/skills directly to `.claude/` (not as symlinks).
+**Note:** Files in `.automatasaurus/` are managed by the installer and updated via `npx automatasaurus update`. Add your own custom agents/skills directly to `.claude/` (not as symlinks). The `orchestration/` folder is created during `/work` commands and can optionally be added to `.gitignore`.
 
 ## Installation
 
@@ -282,15 +347,17 @@ The primary way to invoke workflows:
 
 | Command | Description |
 |---------|-------------|
-| `/discovery [feature]` | Start discovery to understand requirements and create plan |
-| `/work-plan` | Analyze open issues, create sequenced implementation plan |
-| `/work-all` | Work through all open issues autonomously |
-| `/work [issue#]` | Work on a specific issue |
+| `/auto-discovery [feature]` | Start discovery to understand requirements and create plan |
+| `/auto-plan` | Analyze open issues, create sequenced implementation plan |
+| `/auto-evolve` | Generate agent-specific PROJECT.md context files |
+| `/auto-work-all` | Work through all open issues autonomously |
+| `/auto-work-milestone [milestone#]` | Work through all issues in a specific milestone |
+| `/auto-work-issue [issue#]` | Work on a specific issue |
 
-### `/discovery` - Discovery Mode
+### `/auto-discovery` - Discovery Mode
 
 ```
-/discovery user authentication system
+/auto-discovery user authentication system
 ```
 
 The discovery command will:
@@ -300,10 +367,10 @@ The discovery command will:
 - Organize issues into milestones
 - Get your approval before any implementation
 
-### `/work-plan` - Implementation Planning
+### `/auto-plan` - Implementation Planning
 
 ```
-/work-plan
+/auto-plan
 ```
 
 Before starting autonomous work, run this command to:
@@ -312,18 +379,35 @@ Before starting autonomous work, run this command to:
 - Generate `implementation-plan.md` with work order and rationale
 - Identify blockers and risks
 
-This step helps you review and approve the execution order before `/work-all` begins.
+This step helps you review and approve the execution order before `/auto-work-all` begins.
 
-### `/work-all` - Autonomous Loop
+### `/auto-evolve` - Agent Context Generation
 
 ```
-/work-all
+/auto-evolve
+```
+
+After planning, run this command to prepare each agent with project-specific guidance:
+- Reads `discovery.md` and `implementation-plan.md`
+- Generates tailored `PROJECT.md` files for each agent folder
+- Developer gets implementation guidance, architecture patterns, tech decisions
+- Architect gets review context, NFRs, integration dependencies
+- Designer gets user personas, flows, accessibility requirements
+- Researcher gets project domain, technology stack, and common research context
+- Tester gets acceptance criteria, edge cases, test coverage needs
+
+The generated context helps agents make better decisions aligned with your project.
+
+### `/auto-work-all` - Autonomous Loop
+
+```
+/auto-work-all
 ```
 
 The orchestrator (aka Product Owner) will:
 - List all remaining issues
 - Select next issue based on dependencies and priority
-- Spawn `/work {n}` as a subagent for context isolation
+- Spawn `/auto-work-issue {n}` as a subagent for context isolation
 - Merge successful PRs
 - Continue until all issues complete or circuit breaker limits reached
 
@@ -332,10 +416,28 @@ The orchestrator (aka Product Owner) will:
 - `maxEscalationsBeforeStop`: 3 - Stop if stuck too many times
 - `maxConsecutiveFailures`: 3 - Stop if failing repeatedly
 
-### `/work` - Single Issue
+### `/auto-work-milestone` - Milestone-Scoped Work
 
 ```
-/work 42
+/auto-work-milestone 3
+```
+
+Work through all open issues in a specific GitHub milestone:
+- Validates the milestone exists and reports its title/open issue count
+- Lists only issues assigned to that milestone
+- Follows `implementation-plan.md` if it exists (filtered to milestone issues)
+- Otherwise uses dependency/priority ordering within the milestone
+- Same circuit breaker limits as `/auto-work-all`
+- Auto-merges successful PRs
+- Reports milestone-specific progress
+- Stops when all issues in the milestone are complete (or limits reached)
+
+Useful when you want to focus on completing a specific release or feature set rather than all open issues.
+
+### `/auto-work-issue` - Single Issue
+
+```
+/auto-work-issue 42
 ```
 
 Work on a specific issue - useful for one-off tickets or addressing a particular issue outside the full autonomous loop:
@@ -353,6 +455,7 @@ You can also invoke agents directly:
 ```
 Use the architect agent to review the database schema
 Use the tester agent to create a test plan for the API
+Use the researcher agent to evaluate authentication libraries
 Use the tester agent with playwright to verify the checkout flow
 ```
 
@@ -458,6 +561,39 @@ Default values in `.claude/settings.json`:
 
 **Note:** Don't edit `settings.json` directly—your changes will be overwritten on update. Use `settings.local.json` for all customizations.
 
+### Agent Teams (Experimental)
+
+Agent teams allow multiple agents to coordinate via shared task lists and direct messaging instead of the default subagent approach. This is most valuable for review cycles where cross-pollination of findings matters.
+
+Teams are enabled by default via `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in settings. Control team behavior in `.claude/settings.local.json`:
+
+```json
+{
+  "automatasaurus": {
+    "limits": {
+      "teamMaxTeammates": 4,
+      "teamPreferForReviews": true,
+      "teamPreferForImplementation": false
+    }
+  }
+}
+```
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `teamMaxTeammates` | 4 | Maximum concurrent teammates (cost control) |
+| `teamPreferForReviews` | true | Use review teams instead of parallel subagents |
+| `teamPreferForImplementation` | false | Use implementation teams for UI issues |
+
+To disable agent teams entirely, set in `settings.local.json`:
+```json
+{
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "0"
+  }
+}
+```
+
 ### Notifications
 
 Configure notification behavior via environment variables:
@@ -491,7 +627,7 @@ The developer agent loads language-specific skills on demand:
    name: agent-name
    description: When to use this agent
    tools: Read, Edit, Write, Bash, Grep, Glob
-   model: sonnet
+   model: opus
    ---
    ```
 3. Write a detailed system prompt including:
@@ -516,6 +652,7 @@ The developer agent loads language-specific skills on demand:
 ## Roadmap
 
 - [x] CLI tool for easy installation (`automatasaurus init`)
+- [x] Agent teams support (experimental) — peer-to-peer agent coordination
 - [ ] Project detection and automatic command configuration
 - [ ] Additional MCP integrations (database, API testing)
 - [ ] Custom agent templates
@@ -534,6 +671,7 @@ Contributions welcome:
 ## Publishing to npm
 
 ```bash
+npm login --auth-type=web
 npm publish --auth-type=web
 ```
 
@@ -545,6 +683,7 @@ This opens a browser for authentication (works with passkeys/security keys).
 - [Subagents Reference](https://code.claude.com/docs/en/sub-agents)
 - [Hooks Reference](https://code.claude.com/docs/en/hooks)
 - [Skills Reference](https://code.claude.com/docs/en/skills)
+- [Agent Teams (Experimental)](https://code.claude.com/docs/en/agent-teams)
 - [Playwright MCP](https://github.com/microsoft/playwright-mcp)
 - [GitHub CLI](https://cli.github.com/)
 - [Best Practices](https://www.anthropic.com/engineering/claude-code-best-practices)

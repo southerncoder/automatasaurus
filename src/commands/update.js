@@ -1,10 +1,11 @@
-import { mkdir, cp, readFile } from 'node:fs/promises';
+import { mkdir, cp, readFile, rm, lstat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { getTemplateDir, getProjectPaths, getVersion, SUBDIR_SYMLINK_DIRS, FILE_SYMLINK_DIRS } from '../lib/paths.js';
-import { symlinkDirectory, symlinkSubdirectories } from '../lib/symlinks.js';
+import { symlinkDirectory, symlinkSubdirectories, symlinkAgentFiles } from '../lib/symlinks.js';
 import { mergeBlockIntoFile } from '../lib/block-merge.js';
-import { mergeLayeredSettings, createLocalSettingsTemplate } from '../lib/json-merge.js';
+import { mergeLayeredSettings, createLocalSettingsTemplate, mergeJsonFile } from '../lib/json-merge.js';
 import { readManifest, writeManifest, updateManifest } from '../lib/manifest.js';
+import { getDeprecatedPaths } from '../lib/migrations.js';
 
 export async function update({ force = false } = {}) {
   const projectRoot = process.cwd();
@@ -16,7 +17,7 @@ export async function update({ force = false } = {}) {
   const manifest = await readManifest(projectRoot);
   if (!manifest) {
     console.log('Automatasaurus is not initialized in this project.');
-    console.log('Run "automatasaurus init" first.');
+    console.log('Run "npx automatasaurus init" first.');
     return;
   }
 
@@ -27,8 +28,43 @@ export async function update({ force = false } = {}) {
     return;
   }
 
-  // 1. Update .automatasaurus directory
-  console.log('Updating framework files in .automatasaurus/...');
+  // 1. Run migrations - remove deprecated files
+  console.log('Running migrations...');
+  const deprecatedPaths = getDeprecatedPaths();
+  let migrationsRun = 0;
+
+  for (const relativePath of deprecatedPaths) {
+    // Remove from .automatasaurus/
+    const automatasaurusPath = join(paths.automatasaurus, relativePath);
+    try {
+      const stat = await lstat(automatasaurusPath);
+      await rm(automatasaurusPath, { recursive: stat.isDirectory(), force: true });
+      migrationsRun++;
+    } catch (error) {
+      if (error.code !== 'ENOENT') throw error;
+    }
+
+    // Remove from .claude/ (only if it's a symlink or doesn't exist - don't remove user files)
+    const claudePath = join(paths.claude, relativePath);
+    try {
+      const stat = await lstat(claudePath);
+      if (stat.isSymbolicLink()) {
+        await rm(claudePath, { force: true });
+      }
+      // If it's not a symlink, it's a user file - leave it alone
+    } catch (error) {
+      if (error.code !== 'ENOENT') throw error;
+    }
+  }
+
+  if (migrationsRun > 0) {
+    console.log(`  Removed ${migrationsRun} deprecated file(s)`);
+  } else {
+    console.log('  No migrations needed');
+  }
+
+  // 2. Update .automatasaurus directory
+  console.log('\nUpdating framework files in .automatasaurus/...');
 
   const allDirs = [...SUBDIR_SYMLINK_DIRS, ...FILE_SYMLINK_DIRS];
   for (const dir of allDirs) {
@@ -42,7 +78,7 @@ export async function update({ force = false } = {}) {
     }
   }
 
-  // 2. Recreate symlinks (in case new items were added)
+  // 3. Recreate symlinks (in case new items were added)
   console.log('\nUpdating symlinks in .claude/...');
   const allSymlinks = [];
 
@@ -56,6 +92,21 @@ export async function update({ force = false } = {}) {
         allSymlinks.push(`${dir}/${subdir}`);
       }
       console.log(`  Updated ${dir}/ (${created.length} subdirs)`);
+    } catch (error) {
+      if (error.code !== 'ENOENT') throw error;
+    }
+  }
+
+  // Flat file symlinks for agents (enables Claude Code agent discovery)
+  {
+    const sourceDir = join(paths.automatasaurus, 'agents');
+    const targetDir = join(paths.claude, 'agents');
+    try {
+      const created = await symlinkAgentFiles(sourceDir, targetDir);
+      for (const file of created) {
+        allSymlinks.push(`agents/${file}`);
+      }
+      console.log(`  Updated agents/ flat files (${created.length} files)`);
     } catch (error) {
       if (error.code !== 'ENOENT') throw error;
     }
@@ -76,7 +127,7 @@ export async function update({ force = false } = {}) {
     }
   }
 
-  // 3. Update block-merged files
+  // 4. Update block-merged files
   console.log('\nUpdating merged files...');
 
   // CLAUDE.md
@@ -121,7 +172,18 @@ export async function update({ force = false } = {}) {
     if (error.code !== 'ENOENT') throw error;
   }
 
-  // 4. Update manifest
+  // .mcp.json
+  const mcpTemplate = join(templateDir, 'mcp.json');
+  try {
+    const mcpContent = await readFile(mcpTemplate, 'utf-8');
+    const frameworkMcp = JSON.parse(mcpContent);
+    await mergeJsonFile(paths.mcp, frameworkMcp);
+    console.log('  Updated .mcp.json');
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+  }
+
+  // 5. Update manifest
   const updatedManifest = updateManifest(manifest, {
     version,
     symlinks: allSymlinks,

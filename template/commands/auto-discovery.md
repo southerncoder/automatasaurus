@@ -28,6 +28,23 @@ Before starting, load:
 
 ---
 
+## Phase 0.5: Detect Existing Discovery Files
+
+**Before anything else, check for prior discovery runs:**
+
+```bash
+ls discovery.md discovery-*.md 2>/dev/null
+```
+
+- If **none exist** → this is the first run, will create `discovery.md`
+- If **some exist** → find the highest number and create `discovery-{N+1}.md`
+  - `discovery.md` counts as run 1
+  - `discovery-2.md` is run 2, etc.
+- **Read ALL existing discovery files** for context — understand what's already been covered
+- Use prior discoveries during Phase 1 to avoid redundant questions and focus on what's new or changed
+
+---
+
 ## Phase 0: Project Orientation
 
 **Before engaging the user, silently orient yourself to the project:**
@@ -128,7 +145,14 @@ Do NOT present all questions at once. Instead:
 
 ## Phase 2: Create Discovery Document
 
-Once requirements are understood, create `discovery.md` in the project:
+Once requirements are understood, create the discovery document:
+
+- **First run**: create `discovery.md`
+- **Subsequent runs**: create `discovery-{N}.md` (e.g., `discovery-2.md`, `discovery-3.md`)
+- Subsequent run documents should be scoped to **new features only**
+- Add a `## Prior Discovery Context` section at the top referencing previous files (e.g., "This builds on requirements from discovery.md")
+
+Create the document in the project:
 
 ```markdown
 # Discovery: [Feature/Project Name]
@@ -197,19 +221,49 @@ Once requirements are understood, create `discovery.md` in the project:
 
 After creating discovery.md, get feedback from specialist agents:
 
-### Architect Review
+### Option A: Subagent Reviews (Default)
+
+#### Architect Review
 ```
-Use the architect agent to review this discovery plan for technical feasibility.
-Focus on: architecture fit, scalability, security implications, technology choices.
-The discovery plan is at: [path to discovery.md]
+Use the Task tool with:
+  subagent_type: "architect"
+  model: "opus"
+  description: "Architect review discovery plan"
+  prompt: |
+    Review this discovery plan for technical feasibility.
+    Focus on: architecture fit, scalability, security implications, technology choices.
+    The discovery plan is at: [path to discovery.md]
 ```
 
-### Designer Review
+#### Designer Review
 ```
-Use the designer agent to review this discovery plan for UI/UX considerations.
-Focus on: user flows, accessibility, responsive design, missing UI requirements.
-The discovery plan is at: [path to discovery.md]
+Use the Task tool with:
+  subagent_type: "designer"
+  model: "opus"
+  description: "Designer review discovery plan"
+  prompt: |
+    Review this discovery plan for UI/UX considerations.
+    Focus on: user flows, accessibility, responsive design, missing UI requirements.
+    The discovery plan is at: [path to discovery.md]
 ```
+
+### Option B: Discovery Review Team (If agent teams enabled)
+
+If `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` is set and you want coordinated review feedback, load the `team-coordination` skill and use the Discovery Review Team pattern:
+
+```
+Create a team to review the discovery plan at [path to discovery.md].
+
+Teammates:
+- Architect: Review for technical feasibility, architecture fit, scalability
+- Designer: Review for UI/UX considerations, user flows, accessibility
+
+Each teammate shares findings with the other for cross-review.
+Architect flags technical constraints that affect UI.
+Designer flags UX requirements with architectural implications.
+```
+
+If team creation fails, fall back to Option A (subagent reviews).
 
 Present the feedback to the user. Refine the discovery document based on feedback.
 
@@ -250,22 +304,20 @@ gh api repos/{owner}/{repo}/milestones \
 Use the `github-issues` skill for proper formatting.
 
 Each issue should:
-- Reference the discovery document
+- Reference the **current** discovery document (not prior ones)
+- Only create issues from requirements in the CURRENT discovery document
 - Include user story format
 - Have clear acceptance criteria
 - Document dependencies
 - Be sized for a single PR
 - **No type prefix in title** (e.g., "Feature:", "Bug:") - use labels instead
 
+**Important:** Don't use heredocs (`<<EOF`) with `gh` commands - they fail in sandboxed environments. Instead, use the Write tool to create a temp file, then `--body-file`:
+
 ```bash
-gh issue create \
-  --title "[Concise description]" \
-  --milestone "[Milestone Name]" \
-  --label "feature" \
-  --label "ready" \
-  --body "$(cat <<'EOF'
+# Step 1: Use Write tool to create .github-issue-body.md with:
 ## Context
-From discovery: [link to discovery.md]
+From discovery: [link to current discovery file, e.g., discovery.md or discovery-2.md]
 
 ## User Story
 As a [user],
@@ -284,8 +336,17 @@ So that [benefit].
 
 ## Out of Scope
 [What's NOT included]
-EOF
-)"
+
+# Step 2: Create the issue
+gh issue create \
+  --title "[Concise description]" \
+  --milestone "[Milestone Name]" \
+  --label "feature" \
+  --label "ready" \
+  --body-file .github-issue-body.md
+
+# Step 3: Clean up
+rm .github-issue-body.md
 ```
 
 ---
@@ -299,14 +360,14 @@ EOF
 
 When you're ready to start development, run:
 
-/work-plan
+/auto-plan
 
 This will analyze the issues, determine the optimal work order based on dependencies, and create a prioritized implementation plan.
 
 View your milestones and issues at: [GitHub milestone URL]
 ```
 
-**IMPORTANT**: Always recommend `/work-plan` as the primary next step - it helps the user understand the work ahead before diving in.
+**IMPORTANT**: Always recommend `/auto-plan` as the primary next step - it helps the user understand the work ahead before diving in.
 
 ---
 

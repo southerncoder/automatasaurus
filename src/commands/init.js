@@ -1,9 +1,9 @@
 import { mkdir, cp, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { getTemplateDir, getProjectPaths, getVersion, SUBDIR_SYMLINK_DIRS, FILE_SYMLINK_DIRS } from '../lib/paths.js';
-import { symlinkDirectory, symlinkSubdirectories } from '../lib/symlinks.js';
+import { symlinkDirectory, symlinkSubdirectories, symlinkAgentFiles } from '../lib/symlinks.js';
 import { mergeBlockIntoFile } from '../lib/block-merge.js';
-import { mergeLayeredSettings, createLocalSettingsTemplate } from '../lib/json-merge.js';
+import { mergeLayeredSettings, createLocalSettingsTemplate, mergeJsonFile } from '../lib/json-merge.js';
 import { readManifest, writeManifest, createManifest, updateManifest } from '../lib/manifest.js';
 
 export async function init({ force = false } = {}) {
@@ -62,6 +62,21 @@ export async function init({ force = false } = {}) {
     }
   }
 
+  // Flat file symlinks for agents (enables Claude Code agent discovery)
+  {
+    const sourceDir = join(paths.automatasaurus, 'agents');
+    const targetDir = join(paths.claude, 'agents');
+    try {
+      const created = await symlinkAgentFiles(sourceDir, targetDir);
+      for (const file of created) {
+        allSymlinks.push(`agents/${file}`);
+        console.log(`  Linked agents/${file}`);
+      }
+    } catch (error) {
+      if (error.code !== 'ENOENT') throw error;
+    }
+  }
+
   // File-level symlinks (hooks, commands)
   for (const dir of FILE_SYMLINK_DIRS) {
     const sourceDir = join(paths.automatasaurus, dir);
@@ -114,7 +129,20 @@ export async function init({ force = false } = {}) {
     console.log('  No settings template found, skipping');
   }
 
-  // 6. Block-merge commands.md
+  // 6. Merge MCP config
+  console.log('\nMerging MCP config...');
+  const mcpTemplate = join(templateDir, 'mcp.json');
+  try {
+    const mcpContent = await readFile(mcpTemplate, 'utf-8');
+    const frameworkMcp = JSON.parse(mcpContent);
+    const result = await mergeJsonFile(paths.mcp, frameworkMcp);
+    console.log(`  ${result.created ? 'Created' : 'Updated'} .mcp.json`);
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+    console.log('  No MCP template found, skipping');
+  }
+
+  // 7. Block-merge commands.md
   console.log('\nMerging commands.md...');
   const commandsTemplate = join(templateDir, 'commands.block.md');
   try {
@@ -126,7 +154,7 @@ export async function init({ force = false } = {}) {
     console.log('  No commands.md template found, skipping');
   }
 
-  // 7. Write manifest
+  // 8. Write manifest
   const manifest = createManifest(version);
   manifest.symlinks = allSymlinks;
   manifest.merged_blocks = [
@@ -142,8 +170,8 @@ Automatasaurus initialized successfully!
 Next steps:
   1. Review CLAUDE.md for framework documentation
   2. Update .claude/commands.md with your project-specific commands
-  3. Start using /discovery, /work, or /work-all commands
+  3. Start using /auto-discovery, /auto-work-issue, or /auto-work-all commands
 
-Run "automatasaurus status" to see installation details.
+Run "npx automatasaurus status" to see installation details.
 `);
 }

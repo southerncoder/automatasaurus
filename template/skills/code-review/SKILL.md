@@ -9,43 +9,19 @@ Guidelines for performing effective code reviews that catch issues, improve code
 
 ## Review Mindset
 
-### Bias Towards Shipping
-
-**The primary goal is to get working code merged, not to achieve perfection.**
-
-Before requesting changes, always ask yourself:
-> "Is this feedback worth an additional review cycle?"
-
-Most feedback should be:
-- Approved with suggestions for the author to consider
-- Comments for future reference, not blocking
-- Follow-up issues for later improvement
-
-**Reserve "Request Changes" for actual problems:**
-- Security vulnerabilities
-- Bugs that will cause runtime errors
-- Breaking changes to existing functionality
-- Missing critical requirements
-
-**Do NOT block for:**
-- Style preferences (unless egregiously inconsistent)
-- "I would have done it differently"
-- Minor optimizations that don't matter at current scale
-- Missing tests for edge cases that are unlikely
-- Refactoring opportunities (create a follow-up issue instead)
+**Default to requesting changes.** Your job is to protect the codebase. An approval is a statement that you'd stake your reputation on this code — if you have any doubt, request changes. It's always cheaper to do another review round than to ship a bug.
 
 ### Goals of Code Review
-1. **Catch real bugs** before they reach production
-2. **Prevent security issues** - the things that actually matter
-3. **Share knowledge** across the team
-4. **Ship working software** - don't let perfect be the enemy of good
+1. **Catch bugs and design flaws** before they reach production
+2. **Prevent security issues** — treat every input as hostile
+3. **Enforce quality standards** — the codebase should get better with every PR, never worse
+4. **Maintain architectural integrity** — reject code that works but is built wrong
 
 ### The Right Attitude
-- You're reviewing the **code**, not the person
-- Assume good intent - the author tried their best
-- Be a collaborator, not a gatekeeper
-- Your job is to help ship good code, not to find fault
-- **Velocity matters** - every review cycle has a cost
+- You are a **gatekeeper**. That's not a dirty word — it's your job. The codebase depends on you saying "no" when something isn't ready.
+- Be direct and specific. Don't soften feedback with hedging language.
+- Approving bad code is worse than blocking good code. When in doubt, request changes.
+- A clean diff is not the same as correct code. Read critically, assume there are bugs, and prove yourself wrong.
 
 ## Review Process
 
@@ -238,15 +214,15 @@ Consider using async/await for consistency.
 
 Use prefixes to indicate importance:
 
-| Prefix | Meaning | Frequency |
-|--------|---------|-----------|
-| **Blocker:** | Must fix before merge - security/bugs only | Rare |
-| **Suggestion:** | Would improve the code, not blocking | Common |
-| **Nit:** | Minor style/preference, definitely not blocking | Occasional |
-| **Question:** | Seeking to understand | As needed |
-| **Praise:** | Something done well | Often! |
+| Prefix | Meaning | Blocks Merge? |
+|--------|---------|---------------|
+| **Blocker:** | Must fix — bugs, security, correctness, design flaws | Yes — always |
+| **Concern:** | Likely needs fixing — poor patterns, missing tests, unclear logic | Yes — unless author justifies |
+| **Suggestion:** | Would improve the code | No |
+| **Nit:** | Minor style/preference | No |
+| **Question:** | Seeking to understand (may become a blocker depending on answer) | Potentially |
 
-**Important:** Most comments should be Suggestions or Nits, not Blockers. If you find yourself writing many Blockers, reconsider whether they truly block shipping.
+**Important:** Don't downgrade real issues to "Suggestion" or "Nit" to avoid conflict. If something will cause bugs or maintenance pain, it's a Blocker or Concern, period.
 
 ```markdown
 **Blocker:** This SQL query is vulnerable to injection. (Security - must fix)
@@ -260,27 +236,15 @@ Use prefixes to indicate importance:
 **Praise:** Really clean error handling here! (Always welcome)
 ```
 
-### Ask Questions Instead of Demanding
+### Be Direct, Not Wishy-Washy
 
-**Demanding:**
-> Change this to use a Map instead of an object.
-
-**Collaborative:**
+**Too soft (avoids accountability):**
 > Have you considered using a Map here? It might give better performance for frequent lookups. What do you think?
 
+**Direct and clear:**
+> This should be a Map, not a plain object. Map has O(1) lookups and doesn't suffer from prototype pollution. Change this.
+
 ## Common Review Scenarios
-
-### When You'd Do It Differently
-
-Don't block for preference. Ask yourself:
-- Is their way wrong, or just different?
-- Does it work correctly?
-- Is it maintainable?
-
-If it's just different:
-```markdown
-**Note:** I might have used X approach here, but this works well too. Not blocking.
-```
 
 ### When Something Is Missing
 
@@ -305,49 +269,29 @@ Don't just point out problems:
 
 ## Review Response Templates
 
-**Default to Approve.** Most reviews should approve, possibly with suggestions.
+**Default to Request Changes.** An approval should be the exception, not the rule. Most PRs have at least one issue worth fixing before merge.
 
-### Approve (Most Common)
+### Request Changes (most common outcome)
 ```markdown
-**[Architect]** LGTM! Clean implementation, good test coverage.
+**[Architect]** Changes requested:
 
-Minor suggestions (not blocking):
-- Line 42: prefer const
-- Consider adding a comment explaining the retry logic
+**Blockers:**
+1. SQL injection vulnerability in the search query — this is a security risk
+2. No error handling on the API call — will crash on network failure
 
-Merging as-is is fine. Address these if you agree, or not - your call.
+**Concerns:**
+1. This bypasses the existing validation layer — use `validateInput()` instead of rolling your own
+2. Missing tests for the error path
+
+Fix these and request re-review.
 ```
 
-### Approve with Suggestions
+### Approve (use sparingly — only when the PR is genuinely solid)
 ```markdown
-**[Architect]** Approving - this is solid work.
+**[Architect]** Approved. Implementation is correct, well-tested, and follows existing patterns.
 
-A few things to consider (can address now or in follow-up):
-1. The validation could be more specific about what's wrong
-2. Consider adding logging for debugging
-
-Not blocking merge. Ship it!
+No issues found.
 ```
-
-### Request Changes (Rare - Use Sparingly)
-
-**Only use for genuine blockers: security issues, bugs, or missing critical functionality.**
-
-```markdown
-**[Architect]** Good progress! Found one issue that needs fixing before merge:
-
-**Blocker:**
-1. SQL injection vulnerability in the search query - this is a security risk
-
-Everything else looks good. Happy to re-review once the security fix is in.
-```
-
-**Ask yourself before requesting changes:**
-- Will this cause a production incident if shipped?
-- Is this a security vulnerability?
-- Does it break existing functionality?
-
-If the answer to all three is "no", consider approving with suggestions instead.
 
 ### Decline (N/A)
 ```markdown
@@ -356,20 +300,19 @@ If the answer to all three is "no", consider approving with suggestions instead.
 Reviewed: Backend/infrastructure changes only, no user-facing impact.
 ```
 
-## Review Etiquette
+## Review Standards
 
 ### Do
-- Review promptly (within 24 hours ideally)
-- Be thorough but not pedantic
-- Acknowledge good work
-- Offer to discuss complex issues in person/call
-- Re-review quickly after changes
+- Review promptly
+- Be thorough — read every line of the diff
+- Request changes whenever you find real issues — don't let things slide
+- Hold a high bar — "it works" is not enough, it must be correct, maintainable, and secure
+- Re-review quickly after changes, and verify the fixes are actually good
 
 ### Don't
-- Nitpick excessively
-- Bike-shed on minor style issues
-- Block for preferences
-- Be condescending
+- Approve out of politeness or to avoid slowing things down
+- Downgrade blockers to suggestions to seem agreeable
+- Approve with "suggestions" that are actually required fixes — if it needs fixing, request changes
 - Leave reviews hanging
 
 ## Self-Review Checklist

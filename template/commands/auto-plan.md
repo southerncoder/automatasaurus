@@ -20,7 +20,31 @@ You are now the **Implementation Planner**. Your job is to:
 
 ---
 
+## Phase 0.5: Detect Existing Plan Files
+
+**Before gathering issues, check for prior plan runs:**
+
+```bash
+ls implementation-plan.md implementation-plan-*.md 2>/dev/null
+```
+
+- If **none exist** → this is the first run, will create `implementation-plan.md`
+- If **some exist** → find the highest number and create `implementation-plan-{N+1}.md`
+  - `implementation-plan.md` counts as run 1
+  - `implementation-plan-2.md` is run 2, etc.
+- **Read ALL existing plan files** for context — understand the current dependency graph and what's already been sequenced
+
+---
+
 ## Phase 1: Gather Issues
+
+### Read All Discovery Files
+
+```bash
+ls discovery.md discovery-*.md 2>/dev/null
+```
+
+Read all discovery files (glob `discovery*.md`) for full requirements context.
 
 ### List All Open Issues
 
@@ -58,14 +82,10 @@ Before implementation begins, spawn the Designer agent to establish the visual f
 
 ```
 Use the Task tool with:
-  subagent_type: "general-purpose"
-  model: "sonnet"
+  subagent_type: "designer"
+  model: "opus"
   description: "Create design language"
   prompt: |
-    You are the Designer agent. Load your role from .claude/agents/designer/AGENT.md
-
-    **[Designer]**
-
     Establish the design language and style guide for this project.
 
     1. Check for existing design documentation:
@@ -103,23 +123,47 @@ Use the Task tool with:
 
     ## Interaction Patterns
     - Hover, focus, and active states
-    - Transitions and animations
+    - Transitions and animations (subtle, responsive, not decorative)
     - Loading states
     - Empty states
 
     ## Accessibility Standards
-    - Minimum contrast ratios
-    - Focus indicators
-    - Touch target sizes
+    - Minimum contrast ratios (4.5:1 text, 3:1 UI)
+    - Focus indicators (visible, consistent)
+    - Touch target sizes (minimum 44x44px)
 
-    The goal is an intuitive, polished user experience with appealing colors
-    that work harmoniously together. The design should feel modern and cohesive.
+    ## Design Quality Criteria
+
+    Apply these principles when making design decisions:
+
+    **Visual Hierarchy:** Important actions should be prominent. Users should know
+    where to look and what to do within 3 seconds.
+
+    **Simplicity:** Every element should earn its place. When something feels
+    complex, question whether the complexity is necessary.
+
+    **Consistency:** Reuse patterns. Novel UI should only exist when it meaningfully
+    improves the experience.
+
+    **Restraint:** Default to fewer colors, more whitespace, and simpler solutions.
+    A design that does less but does it well beats one that does more poorly.
+
+    **Project Personality:** Consider:
+    - Is this playful or professional?
+    - Minimal or feature-rich?
+    - Technical or consumer-facing?
+    Let the answers inform aesthetic choices.
+
+    The goal is an intuitive, polished user experience where colors work
+    harmoniously, typography creates clear hierarchy, spacing feels balanced,
+    and the overall aesthetic feels intentional rather than assembled from
+    random choices.
 
     Output: Write the design system to `design-system.md` (or update existing).
     Return the path to the design document when complete.
 ```
 
-The design system lives in its own file, separate from the implementation plan.
+The design system lives in its own file (`design-system.md`), separate from the implementation plan. It is always updated in place (not numbered). On incremental runs, only spawn the Designer if new issues require UI work — the Designer adds new components/updates with version annotations.
 
 ---
 
@@ -147,7 +191,18 @@ Apply these criteria to determine work order:
 
 ## Phase 5: Create Implementation Plan
 
-Write `implementation-plan.md`:
+Create the plan document:
+
+- **First run**: create `implementation-plan.md`
+- **Subsequent runs**: create `implementation-plan-{N}.md` (e.g., `implementation-plan-2.md`)
+- Subsequent run documents should contain:
+  - Summary of ALL milestones/issues (complete current state)
+  - Work sequence for NEW issues only (not in prior plans)
+  - Updated dependency graph covering all issues (new and old)
+  - `## Prior Plan Context` section referencing previous files
+  - `## Progress Since Last Plan` section noting completed issues
+
+Write the plan document:
 
 ```markdown
 # Implementation Plan
@@ -237,7 +292,15 @@ I've analyzed [N] open issues and created an implementation plan.
 
 The full plan is in `implementation-plan.md`.
 
-Ready to start with `/work-all`?
+**Optional Next Step:**
+
+If you want to generate project-specific context for each agent, run:
+
+`/auto-evolve`
+
+This creates PROJECT.md files in each agent folder with tailored guidance based on discovery and the implementation plan. Recommended for complex projects.
+
+Otherwise, proceed directly to `/auto-work-all`.
 ```
 
 ---

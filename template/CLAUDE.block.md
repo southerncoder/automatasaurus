@@ -7,20 +7,20 @@ This project uses Automatasaurus, an automated software development workflow pow
 ### Two-Phase Operation
 
 **Phase 1: Discovery (Interactive)**
-- `/discovery` command facilitates requirements conversation with user
+- `/auto-discovery` command facilitates requirements conversation with user
 - Brings in specialists (Architect, Designer) for review as topics arise
 - Creates GitHub issues organized into milestones
 - User approves before autonomous work begins
 
 **Phase 2: Autonomous Loop (Command Orchestrated)**
-- `/work-all` command selects next issue based on dependencies and priority
+- `/auto-work-all` command selects next issue based on dependencies and priority
 - Routes to Designer for specs if UI work needed
 - Developer implements and opens PR
 - Review cycle: Architect (required), Designer (if UI)
 - Tester verifies, then orchestration merges
 - Loop continues until all issues complete or limits reached
 
-**Note:** Commands (`/discovery`, `/work`, `/work-all`) act as the product owner / orchestrator.
+**Note:** Commands (`/auto-discovery`, `/auto-work-issue`, `/auto-work-all`) act as the product owner / orchestrator.
 
 ### Escalation Flow
 
@@ -48,9 +48,11 @@ The following agents are available in `.claude/agents/`:
 | Agent | Role | Model | Review Status |
 |-------|------|-------|---------------|
 | `architect` | System design, ADRs, stuck-issue analysis, PR review | Opus | **Required** |
-| `designer` | UI/UX specs, accessibility, design review | Sonnet | If UI changes |
-| `developer` | Implementation, PRs, addressing feedback | Sonnet | N/A |
-| `tester` | QA, Playwright, verification | Sonnet | **Required** |
+| `evolver` | PROJECT.md generation, context synthesis | Opus | N/A |
+| `designer` | UI/UX specs, accessibility, design review | Opus | If UI changes |
+| `developer` | Implementation, PRs, addressing feedback | Opus | N/A |
+| `researcher` | Deep research, technology evaluation, codebase analysis | Sonnet | N/A |
+| `tester` | QA, Playwright, verification | Opus | **Required** |
 
 **Note:** Commands handle orchestration. Agents are autonomous workers invoked by commands.
 
@@ -74,6 +76,7 @@ Every GitHub comment, issue body, and PR description must start with:
 | Designer | `**[Designer]**` |
 | Developer | `**[Developer]**` |
 | Tester | `**[Tester]**` |
+| Researcher | `**[Researcher]**` |
 | Product Owner | `**[Product Owner]**` |
 
 ### Where to Use
@@ -215,17 +218,19 @@ Primary way to invoke workflows:
 
 | Command | Description |
 |---------|-------------|
-| `/discovery [feature]` | Start discovery to understand requirements and create plan |
-| `/work-plan` | Analyze open issues, create sequenced implementation plan |
-| `/work-all` | Work through all open issues autonomously |
-| `/work [issue#]` | Work on a specific issue |
+| `/auto-discovery [feature]` | Start discovery to understand requirements and create plan |
+| `/auto-plan` | Analyze open issues, create sequenced implementation plan |
+| `/auto-evolve` | Generate PROJECT.md files for each agent from discovery/planning |
+| `/auto-work-all` | Work through all open issues autonomously |
+| `/auto-work-issue [issue#]` | Work on a specific issue |
+| `/auto-work-milestone [milestone#]` | Work on all issues in a specific milestone |
 
 Examples:
 ```
-/discovery user authentication system
-/work-plan
-/work-all
-/work 42
+/auto-discovery user authentication system
+/auto-plan
+/auto-work-all
+/auto-work-issue 42
 ```
 
 ## Agent Invocation
@@ -238,6 +243,92 @@ Use the tester agent with playwright to verify the login flow
 ```
 
 Or they are automatically selected based on task context.
+
+## Agent Context Flow
+
+Sub-agents start with fresh context - they don't inherit the parent conversation's history. The orchestration layer uses **briefings** and **reports** to communicate context and capture results.
+
+### How It Works
+
+When the `/auto-work-issue` or `/auto-work-all` commands spawn agents, they:
+
+1. **Create a briefing file** with task context and prior agent activity
+2. **Pass the briefing path** in the Task prompt
+3. **Read the agent's report** after the Task returns
+4. **Include report summary** in the next agent's briefing
+
+Claude Code auto-loads each agent's system prompt from `.claude/agents/{name}.md` when spawned with matching `subagent_type`. Agents follow a **briefing protocol**:
+1. Read the briefing file first
+2. Do their work
+3. Write a report before completing
+
+### Orchestration Folder Structure
+
+All briefings and reports are stored in `orchestration/`:
+
+```
+orchestration/
+├── discovery/
+│   └── {date}-{feature}/
+├── planning/
+│   └── {date}-{plan}/
+└── issues/
+    └── {issue-number}-{slug}/
+        ├── BRIEFING-design-specs.md
+        ├── REPORT-design-specs.md
+        ├── BRIEFING-implement.md
+        ├── REPORT-implement.md
+        ├── BRIEFING-architect-review.md
+        ├── REPORT-architect-review.md
+        └── ...
+```
+
+This provides a full audit trail of agent communication for each issue.
+
+## Agent Teams (Experimental)
+
+Automatasaurus supports two coordination modes for multi-agent work:
+
+### Subagents (Default)
+
+The standard approach — agents are spawned via the Task tool, read a briefing, do their work, and write a report. Communication flows through the orchestrator only.
+
+### Agent Teams
+
+An experimental alternative — multiple agents run as independent Claude Code sessions that coordinate via shared task lists and peer-to-peer messaging. Agents can communicate directly with each other during work.
+
+### When to Use Each
+
+| Workflow Step | Subagents | Teams | Decision Factor |
+|--------------|-----------|-------|-----------------|
+| Design specs | Always | N/A | Single-agent task |
+| Implementation | Default | When UI work needs real-time designer feedback | `teamPreferForImplementation` |
+| Reviews | Default | When cross-pollination of findings adds value | `teamPreferForReviews` |
+| Feedback fixes | Always | N/A | Single-agent task |
+| Stuck analysis | Always | N/A | Single-agent task |
+
+### Team Composition Patterns
+
+| Pattern | Teammates | Use Case |
+|---------|-----------|----------|
+| Review Team | Architect + Tester + Designer | PR reviews with coordinated findings |
+| Implementation Team | Developer + Designer | UI features with real-time iteration |
+| Discovery Review Team | Architect + Designer | Discovery plan reviews |
+
+### Limitations
+
+- Agent teams are experimental and may not be available in all environments
+- Playwright MCP may not be available in teammate sessions (Tester fallback to subagent)
+- Teams use more tokens than subagents due to concurrent sessions and messaging
+- Always have a fallback to subagents if team creation fails
+
+### Audit Trail
+
+Both modes use the same orchestration folder structure. Teams additionally produce:
+- `REPORT-team-review.md` — synthesized findings from team reviews
+- `REPORT-design-review-inline.md` — inline designer feedback during implementation teams
+
+For detailed patterns, load the `team-coordination` skill.
 
 ## GitHub Integration
 
@@ -257,7 +348,8 @@ Available skills in `.claude/skills/`:
 - `github-issues` - Issue creation, sizing, milestones
 - `pr-writing` - Best practices for writing clear PR descriptions
 - `code-review` - Best practices for performing thorough code reviews
-- `agent-coordination` - Multi-agent workflow patterns
+- `agent-coordination` - Multi-agent workflow patterns and briefing/report protocol
+- `team-coordination` - Agent teams patterns (experimental) — peer-to-peer coordination
 - `project-commands` - Finding and using project-specific commands
 - `notifications` - User notification system for questions, approvals, and alerts
 
@@ -296,6 +388,46 @@ Notifications are also sent automatically on stop based on context.
 | `GITHUB_WORKFLOW` | Set to "enabled" for GitHub integration |
 | `AUTOMATASAURUS_SOUND` | Set to "false" to disable notification sounds |
 | `AUTOMATASAURUS_LOG` | Custom log file location |
+| `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` | Set to "1" to enable agent teams (experimental) |
+
+## Sandbox Configuration
+
+Automatasaurus enables sandbox mode by default for autonomous operation with safety boundaries:
+
+```json
+{
+  "sandbox": {
+    "enabled": true,
+    "mode": "auto-allow",
+    "filesystem": {
+      "writeDeny": ["~/.ssh", "~/.bashrc", "/etc", "/bin", ...]
+    },
+    "network": {
+      "allowedDomains": ["github.com", "npmjs.org", "pypi.org", ...]
+    }
+  }
+}
+```
+
+**Key features:**
+- `auto-allow` mode: Bash commands run without prompts inside sandbox boundaries
+- Protected paths: SSH keys, shell configs, system directories are write-protected
+- Network allowlist: Only approved domains (GitHub, npm, PyPI) accessible
+
+**To add more allowed domains**, add to `settings.local.json`:
+```json
+{
+  "sandbox": {
+    "network": {
+      "allowedDomains": ["your-internal-registry.com"]
+    }
+  }
+}
+```
+
+**Requirements:**
+- macOS: Built-in (Seatbelt)
+- Linux/WSL2: `sudo apt install bubblewrap socat`
 
 ## Circuit Breaker Configuration
 
